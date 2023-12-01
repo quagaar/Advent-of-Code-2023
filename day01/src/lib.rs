@@ -1,74 +1,66 @@
-fn first_and_last(digits: impl Iterator<Item = char>) -> Option<(char, char)> {
-    digits.fold(None, |acc, ch| {
-        if let Some((first, _last)) = acc {
-            Some((first, ch))
-        } else {
-            Some((ch, ch))
-        }
-    })
-}
+use rayon::prelude::*;
 
-const DIGITS: [&str; 10] = [
-    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-];
-
-fn first_digit(line: &str) -> Option<usize> {
-    let mut result = line
-        .chars()
-        .enumerate()
-        .filter(|(_, b)| b.is_ascii_digit())
-        .map(|(pos, ch)| (pos, (ch as usize - '0' as usize)))
-        .next();
-    for (digit, word) in DIGITS.iter().enumerate() {
-        if let Some(pos) = line.find(word) {
-            match result {
-                None => result = Some((pos, digit)),
-                Some((x, _)) if pos < x => result = Some((pos, digit)),
-                _ => (),
-            }
-        }
-    }
-    result.map(|(_, x)| x)
-}
-
-fn last_digit(line: &str) -> Option<usize> {
-    let mut result = line
-        .chars()
-        .enumerate()
-        .filter(|(_, b)| b.is_ascii_digit())
-        .map(|(pos, ch)| (pos, (ch as usize - '0' as usize)))
-        .last();
-    for (digit, word) in DIGITS.iter().enumerate() {
-        if let Some((pos, _)) = line.match_indices(word).last() {
-            match result {
-                None => result = Some((pos, digit)),
-                Some((x, _)) if pos > x => result = Some((pos, digit)),
-                _ => (),
-            }
-        }
-    }
-    result.map(|(_, x)| x)
-}
-
-pub fn solve_part1(input: &str) -> usize {
+pub fn solve_part1(input: &str) -> u32 {
     input
-        .lines()
-        .flat_map(|line| first_and_last(line.chars().filter(|ch| ch.is_ascii_digit())))
-        .map(|(first, last)| 10 * (first as usize - '0' as usize) + (last as usize - '0' as usize))
+        .par_lines()
+        .filter_map(|line| {
+            if let (Some(first), Some(last)) = (
+                line.chars().find_map(|c| c.to_digit(10)),
+                line.chars().rev().find_map(|c| c.to_digit(10)),
+            ) {
+                Some(10 * first + last)
+            } else {
+                None
+            }
+        })
         .sum()
 }
 
-pub fn solve_part2(input: &str) -> usize {
+pub fn solve_part2(input: &str) -> u32 {
     input
-        .lines()
-        .flat_map(|line| {
-            if let (Some(first), Some(last)) = (first_digit(line), last_digit(line)) {
+        .par_lines()
+        .filter_map(|line| {
+            if let (Some(first), Some(last)) = (
+                (0..line.len()).find_map(|x| lookup_digit(&line[x..])),
+                (0..line.len()).rev().find_map(|x| lookup_digit(&line[x..])),
+            ) {
                 Some(first * 10 + last)
             } else {
                 None
             }
         })
         .sum()
+}
+
+const LUT: [(&str, u32); 18] = [
+    ("one", 1),
+    ("two", 2),
+    ("three", 3),
+    ("four", 4),
+    ("five", 5),
+    ("six", 6),
+    ("seven", 7),
+    ("eight", 8),
+    ("nine", 9),
+    ("1", 1),
+    ("2", 2),
+    ("3", 3),
+    ("4", 4),
+    ("5", 5),
+    ("6", 6),
+    ("7", 7),
+    ("8", 8),
+    ("9", 9),
+];
+
+fn lookup_digit(s: &str) -> Option<u32> {
+    LUT.iter().find_map(|(word, digit)| {
+        if s.starts_with(word) {
+            Some(*digit)
+        } else {
+            None
+        }
+    })
 }
 
 pub const EXAMPLE: &str = include_str!("../example.txt");
