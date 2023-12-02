@@ -1,4 +1,8 @@
+#[macro_use]
+extern crate lazy_static;
+
 use rayon::prelude::*;
+use regex::Regex;
 
 pub fn solve_part1(input: &str) -> u32 {
     input
@@ -20,10 +24,7 @@ pub fn solve_part2(input: &str) -> u32 {
     input
         .par_lines()
         .filter_map(|line| {
-            if let (Some(first), Some(last)) = (
-                (0..line.len()).find_map(|x| lookup_digit(&line[x..])),
-                (0..line.len()).rev().find_map(|x| lookup_digit(&line[x..])),
-            ) {
+            if let (Some(first), Some(last)) = (first_digit(line), last_digit(line)) {
                 Some(first * 10 + last)
             } else {
                 None
@@ -32,35 +33,37 @@ pub fn solve_part2(input: &str) -> u32 {
         .sum()
 }
 
-const LUT: [(&str, u32); 18] = [
-    ("one", 1),
-    ("two", 2),
-    ("three", 3),
-    ("four", 4),
-    ("five", 5),
-    ("six", 6),
-    ("seven", 7),
-    ("eight", 8),
-    ("nine", 9),
-    ("1", 1),
-    ("2", 2),
-    ("3", 3),
-    ("4", 4),
-    ("5", 5),
-    ("6", 6),
-    ("7", 7),
-    ("8", 8),
-    ("9", 9),
-];
+lazy_static! {
+    static ref FIRST_REGEX: Regex = Regex::new(
+        r"(one|1)|(two|2)|(three|3)|(four|4)|(five|5)|(six|6)|(seven|7)|(eight|8)|(nine|9)"
+    )
+    .unwrap();
+    static ref LAST_REGEX: Regex = Regex::new(
+        r"^.*(?:(one|1)|(two|2)|(three|3)|(four|4)|(five|5)|(six|6)|(seven|7)|(eight|8)|(nine|9))"
+    )
+    .unwrap();
+}
 
-fn lookup_digit(s: &str) -> Option<u32> {
-    LUT.iter().find_map(|(word, digit)| {
-        if s.starts_with(word) {
-            Some(*digit)
-        } else {
-            None
-        }
-    })
+fn first_digit(line: &str) -> Option<u32> {
+    FIRST_REGEX
+        .captures(line)?
+        .iter()
+        .enumerate()
+        .skip(1)
+        .filter(|(_, x)| x.is_some())
+        .map(|(digit, _)| digit as u32)
+        .next()
+}
+
+fn last_digit(line: &str) -> Option<u32> {
+    LAST_REGEX
+        .captures(line)?
+        .iter()
+        .enumerate()
+        .skip(1)
+        .filter(|(_, x)| x.is_some())
+        .map(|(digit, _)| digit as u32)
+        .next()
 }
 
 pub const EXAMPLE: &str = include_str!("../example.txt");

@@ -13,7 +13,9 @@ name = "day01"
 test = false
 
 [dependencies]
+lazy_static = "1.4.0"
 rayon = "1.8.0"
+regex = "1.10.2"
 runner = { path = "../utils/runner" }
 
 [dev-dependencies]
