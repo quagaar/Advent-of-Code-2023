@@ -1,63 +1,48 @@
+use rayon::prelude::*;
+
 pub fn solve_part1(input: &str) -> usize {
     input
-        .lines()
-        .filter_map(Game::try_parse)
-        .filter(is_possible_game)
-        .map(|game| game.id)
+        .par_lines()
+        .filter_map(|line| line.split_once(": "))
+        .filter(|(_, rounds)| is_possible_game(rounds))
+        .map(|(game, _)| game.split_once(' ').unwrap().1.parse::<usize>().unwrap())
         .sum()
 }
 
 pub fn solve_part2(input: &str) -> usize {
     input
-        .lines()
-        .filter_map(Game::try_parse)
-        .map(get_cube_power)
+        .par_lines()
+        .filter_map(|line| line.split_once(": "))
+        .map(|(_, rounds)| get_cube_power(rounds))
         .sum()
 }
-struct Game<'a> {
-    id: usize,
-    rounds: Vec<Vec<(usize, &'a str)>>,
-}
 
-impl<'a> Game<'a> {
-    fn try_parse(line: &'a str) -> Option<Self> {
-        let (game, rounds) = line.split_once(": ")?;
-        let id = game.split_once(' ')?.1.parse().ok()?;
-        let rounds = rounds
-            .split("; ")
-            .map(|round| {
-                round
-                    .split(", ")
-                    .filter_map(|cube| {
-                        let (number, colour) = cube.split_once(' ')?;
-                        let number = number.parse().ok()?;
-                        Some((number, colour))
-                    })
-                    .collect()
-            })
-            .collect();
-        Some(Game { id, rounds })
-    }
-}
-
-fn is_possible_game(game: &Game) -> bool {
-    game.rounds.iter().all(|round| {
-        round.iter().all(|(number, colour)| match *colour {
-            "red" => *number <= 12,
-            "green" => *number <= 13,
-            "blue" => *number <= 14,
-            _ => false,
+fn is_possible_game(rounds: &str) -> bool {
+    rounds.split("; ").all(|round| {
+        round.split(", ").all(|cube| {
+            let (number, colour) = cube.split_once(' ').unwrap();
+            let number: usize = number.parse().unwrap();
+            match colour {
+                "red" => number <= 12,
+                "green" => number <= 13,
+                "blue" => number <= 14,
+                _ => false,
+            }
         })
     })
 }
 
-fn get_cube_power(game: Game) -> usize {
-    let (red, green, blue) = game.rounds.into_iter().fold((0, 0, 0), |mut acc, round| {
-        round.into_iter().for_each(|(count, colour)| match colour {
-            "red" => acc.0 = acc.0.max(count),
-            "green" => acc.1 = acc.1.max(count),
-            "blue" => acc.2 = acc.2.max(count),
-            _ => (),
+fn get_cube_power(rounds: &str) -> usize {
+    let (red, green, blue) = rounds.split("; ").fold((0, 0, 0), |mut acc, round| {
+        round.split(", ").for_each(|cube| {
+            let (number, colour) = cube.split_once(' ').unwrap();
+            let number: usize = number.parse().unwrap();
+            match colour {
+                "red" => acc.0 = acc.0.max(number),
+                "green" => acc.1 = acc.1.max(number),
+                "blue" => acc.2 = acc.2.max(number),
+                _ => (),
+            }
         });
         acc
     });
