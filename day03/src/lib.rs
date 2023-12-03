@@ -87,16 +87,20 @@ fn is_symbol(c: char) -> bool {
     !c.is_ascii_digit() && c != '.'
 }
 
+const MAX_DIGITS: usize = 3; // Maximum number of digits in a number
+
 fn gear_ratio_calculator<'a>(
     prev: &'a str,
     cur: &'a str,
     next: &'a str,
 ) -> impl Fn(usize) -> Option<usize> + 'a {
     |gear_pos| {
+        let start = gear_pos.saturating_sub(MAX_DIGITS);
+        let end = (gear_pos + MAX_DIGITS + 1).clamp(0, cur.len());
         let (count, ratio) = chain!(
-            find_adjacent_numbers(prev, gear_pos),
-            find_adjacent_numbers(cur, gear_pos),
-            find_adjacent_numbers(next, gear_pos)
+            find_adjacent_numbers(&prev[start..end], gear_pos - start),
+            find_adjacent_numbers(&cur[start..end], gear_pos - start),
+            find_adjacent_numbers(&next[start..end], gear_pos - start)
         )
         .fold((0, 1), |(count, ratio), number| (count + 1, ratio * number));
         if count == 2 {
