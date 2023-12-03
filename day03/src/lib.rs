@@ -4,23 +4,21 @@ use std::{iter::from_fn, ops::Range};
 pub fn solve_part1(input: &str) -> usize {
     chain!([""], input.lines(), [""])
         .tuple_windows()
-        .fold(0, |mut acc, (prev, cur, next)| {
-            acc += find_number_ranges(cur)
+        .fold(0, |acc, (prev, cur, next)| {
+            acc + find_number_ranges(cur)
                 .filter(part1_validator(prev, cur, next))
                 .filter_map(|r| cur[r].parse::<usize>().ok())
-                .sum::<usize>();
-            acc
+                .sum::<usize>()
         })
 }
 
 pub fn solve_part2(input: &str) -> usize {
     chain!([""], input.lines(), [""])
         .tuple_windows()
-        .fold(0, |mut acc, (prev, cur, next)| {
-            acc += find_gear_positions(cur)
+        .fold(0, |acc, (prev, cur, next)| {
+            acc + find_gear_positions(cur)
                 .filter_map(gear_ratio_calculator(prev, cur, next))
-                .sum::<usize>();
-            acc
+                .sum::<usize>()
         })
 }
 
