@@ -47,9 +47,9 @@ impl<'a> Card<'a> {
     }
 
     fn count_matches(self) -> usize {
-        self.numbers
+        self.winning
             .split_ascii_whitespace()
-            .filter(|s| self.winning.split_ascii_whitespace().any(|n| n == *s))
+            .filter(|s| self.numbers.split_ascii_whitespace().any(|n| n == *s))
             .count()
     }
 }
