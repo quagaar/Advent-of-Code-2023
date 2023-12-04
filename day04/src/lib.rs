@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 pub fn solve_part1(input: &str) -> usize {
     input
         .lines()
@@ -47,10 +49,17 @@ impl<'a> Card<'a> {
     }
 
     fn count_matches(self) -> usize {
-        self.numbers
+        let lhs: HashSet<usize> = self
+            .winning
             .split_ascii_whitespace()
-            .filter(|s| self.winning.split_ascii_whitespace().any(|n| n == *s))
-            .count()
+            .filter_map(|s| s.parse().ok())
+            .collect();
+        let rhs: HashSet<usize> = self
+            .numbers
+            .split_ascii_whitespace()
+            .filter_map(|s| s.parse().ok())
+            .collect();
+        lhs.intersection(&rhs).count()
     }
 }
 
