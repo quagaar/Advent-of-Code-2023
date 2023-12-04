@@ -3,9 +3,8 @@ pub fn solve_part1(input: &str) -> usize {
         .lines()
         .filter_map(Card::try_parse)
         .map(|card| {
-            let n = card.count_matches();
-            if n > 0 {
-                1 << (n - 1)
+            if let Some(n) = card.count_matches().checked_sub(1) {
+                1 << n
             } else {
                 0
             }
@@ -19,18 +18,20 @@ pub fn solve_part2(input: &str) -> usize {
         .filter_map(Card::try_parse)
         .map(Card::count_matches)
         .collect::<Vec<_>>();
-    let mut cards = matches.iter().map(|_| 1).collect::<Vec<usize>>();
+    let mut card_copies = vec![1; matches.len()];
     matches.into_iter().enumerate().for_each(|(n, matches)| {
         if matches > 0 {
-            let copies = cards[n];
-            (n + 1..=n + matches).for_each(|m| {
-                if let Some(s) = cards.get_mut(m) {
-                    *s += copies;
+            let copies = card_copies[n];
+            for m in n + 1..=n + matches {
+                if let Some(card) = card_copies.get_mut(m) {
+                    *card += copies;
+                } else {
+                    break;
                 }
-            })
+            }
         }
     });
-    cards.into_iter().sum()
+    card_copies.into_iter().sum()
 }
 
 struct Card<'a> {
