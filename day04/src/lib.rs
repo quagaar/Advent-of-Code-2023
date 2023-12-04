@@ -1,6 +1,8 @@
+use rayon::prelude::*;
+
 pub fn solve_part1(input: &str) -> usize {
     input
-        .lines()
+        .par_lines()
         .filter_map(Card::try_parse)
         .map(|card| {
             if let Some(n) = card.count_matches().checked_sub(1) {
@@ -14,7 +16,7 @@ pub fn solve_part1(input: &str) -> usize {
 
 pub fn solve_part2(input: &str) -> usize {
     let matches = input
-        .lines()
+        .par_lines()
         .filter_map(Card::try_parse)
         .map(Card::count_matches)
         .collect::<Vec<_>>();
