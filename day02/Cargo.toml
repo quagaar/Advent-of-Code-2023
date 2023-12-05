@@ -13,11 +13,11 @@ name = "day02"
 test = false
 
 [dependencies]
-rayon = "1.8.0"
+rayon = { workspace = true }
 runner = { path = "../utils/runner" }
 
 [dev-dependencies]
-criterion = { version = "0.5.1", features = ["html_reports"] }
+criterion = { workspace = true }
 bencher = { path = "../utils/bencher" }
 
 [[bench]]
