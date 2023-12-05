@@ -1,11 +1,9 @@
 use itertools::Itertools;
-use std::{iter::from_fn, ops::Range, str::Lines};
+use std::{iter::from_fn, ops::Range};
 
 pub fn solve_part1(input: &str) -> usize {
-    let mut lines = input.lines();
-    let seeds = get_seeds(lines.next().unwrap());
-    lines.next();
-    let maps = get_maps(lines).collect::<Vec<_>>();
+    let seeds = get_seeds(input);
+    let maps = get_maps(input);
     seeds
         .into_iter()
         .map(|seed| maps.iter().fold(seed, |acc, m| m.convert(acc)))
@@ -14,15 +12,13 @@ pub fn solve_part1(input: &str) -> usize {
 }
 
 pub fn solve_part2(input: &str) -> usize {
-    let mut lines = input.lines();
-    let seeds = get_seed_ranges(lines.next().unwrap());
-    lines.next();
-    let maps = get_maps(lines).collect::<Vec<_>>();
-    seeds
+    let seed_ranges = get_seed_ranges(input);
+    let maps = get_maps(input);
+    seed_ranges
         .into_iter()
-        .map(|seed| {
+        .map(|seed_range| {
             maps.iter()
-                .fold(vec![seed], |acc, m| m.convert_ranges(acc))
+                .fold(vec![seed_range], |acc, m| m.convert_ranges(acc))
                 .into_iter()
                 .map(|r| r.start)
                 .min()
@@ -32,16 +28,16 @@ pub fn solve_part2(input: &str) -> usize {
         .unwrap()
 }
 
-fn get_seeds(line: &str) -> Vec<usize> {
-    let (_, seeds) = line.split_once(": ").unwrap();
+fn get_seeds(input: &str) -> Vec<usize> {
+    let (_, seeds) = input.lines().next().unwrap().split_once(": ").unwrap();
     seeds
         .split_ascii_whitespace()
         .map(|x| x.parse().unwrap())
         .collect()
 }
 
-fn get_seed_ranges(line: &str) -> Vec<Range<usize>> {
-    let (_, seeds) = line.split_once(": ").unwrap();
+fn get_seed_ranges(input: &str) -> Vec<Range<usize>> {
+    let (_, seeds) = input.lines().next().unwrap().split_once(": ").unwrap();
     seeds
         .split_ascii_whitespace()
         .batching(|it| {
@@ -52,8 +48,9 @@ fn get_seed_ranges(line: &str) -> Vec<Range<usize>> {
         .collect()
 }
 
-fn get_maps(mut lines: Lines<'_>) -> impl Iterator<Item = Map<'_>> {
-    from_fn(move || Map::try_parse(&mut lines))
+fn get_maps(input: &str) -> Vec<Map<'_>> {
+    let mut lines = input.lines().skip(2);
+    from_fn(move || Map::try_parse(&mut lines)).collect()
 }
 
 struct Map<'a> {
@@ -62,7 +59,7 @@ struct Map<'a> {
 }
 
 impl<'a> Map<'a> {
-    fn try_parse(lines: &mut Lines<'a>) -> Option<Self> {
+    fn try_parse(lines: &mut impl Iterator<Item = &'a str>) -> Option<Self> {
         let (name, _) = lines.next()?.split_once(" map:")?;
         let ranges = lines.map_while(MapRange::try_parse).collect();
         Some(Map {
@@ -73,8 +70,8 @@ impl<'a> Map<'a> {
 
     fn convert(&self, value: usize) -> usize {
         for range in self.ranges.iter() {
-            if value >= range.source && value < range.source + range.length {
-                return value - range.source + range.destination;
+            if range.source.contains(&value) {
+                return value - range.source.start + range.destination.start;
             }
         }
         value
@@ -101,56 +98,52 @@ impl<'a> Map<'a> {
 }
 
 struct MapRange {
-    destination: usize,
-    source: usize,
-    length: usize,
+    destination: Range<usize>,
+    source: Range<usize>,
 }
 
 impl MapRange {
     fn try_parse(line: &str) -> Option<MapRange> {
         let (first, rest) = line.split_once(' ')?;
         let (second, third) = rest.split_once(' ')?;
-        let destination = first.parse().ok()?;
-        let source = second.parse().ok()?;
-        let length = third.parse().ok()?;
+        let destination: usize = first.parse().ok()?;
+        let source: usize = second.parse().ok()?;
+        let length: usize = third.parse().ok()?;
         Some(MapRange {
-            destination,
-            source,
-            length,
+            destination: destination..destination + length,
+            source: source..source + length,
         })
     }
 
-    #[allow(clippy::single_range_in_vec_init)]
     fn convert_range(&self, range: &Range<usize>) -> Option<(Range<usize>, Vec<Range<usize>>)> {
-        let source_end = self.source + self.length;
-        if range.end <= self.source || range.start >= source_end {
-            // Range is outside
+        if range.end <= self.source.start || range.start >= self.source.end {
+            // Range is outside mapping range
             None
-        } else if range.start >= self.source {
-            if range.end <= source_end {
-                // Range is fully contained
-                let start = range.start - self.source + self.destination;
-                let end = range.end - self.source + self.destination;
+        } else if range.start >= self.source.start {
+            if range.end <= self.source.end {
+                // Range is fully contained in mapping range
+                let start = range.start - self.source.start + self.destination.start;
+                let end = range.end - self.source.start + self.destination.start;
                 Some((start..end, vec![]))
             } else {
                 // Range overlaps end of mapping range
-                let start = range.start - self.source + self.destination;
-                let end = self.destination + self.length;
-                let after = source_end..range.end;
+                let start = range.start - self.source.start + self.destination.start;
+                let end = self.destination.end;
+                let after = self.source.end..range.end;
                 Some((start..end, vec![after]))
             }
-        } else if range.end > source_end {
+        } else if range.end > self.source.end {
             // Range surrounds mapping range
-            let start = self.destination;
-            let end = self.destination + self.length;
-            let before = range.start..self.source;
-            let after = source_end..range.end;
+            let start = self.destination.start;
+            let end = self.destination.end;
+            let before = range.start..self.source.start;
+            let after = self.source.end..range.end;
             Some((start..end, vec![before, after]))
         } else {
             // Range overlaps start of mapping range
-            let start = self.destination;
-            let end = range.end - self.source + self.destination;
-            let before = range.start..self.source;
+            let start = self.destination.start;
+            let end = range.end - self.source.start + self.destination.start;
+            let before = range.start..self.source.start;
             Some((start..end, vec![before]))
         }
     }
