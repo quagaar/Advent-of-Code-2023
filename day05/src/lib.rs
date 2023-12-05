@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use rayon::prelude::*;
 use std::{iter::from_fn, ops::Range};
 
 pub fn solve_part1(input: &str) -> usize {
@@ -15,7 +16,7 @@ pub fn solve_part2(input: &str) -> usize {
     let seed_ranges = get_seed_ranges(input);
     let maps = get_maps(input);
     seed_ranges
-        .into_iter()
+        .into_par_iter()
         .map(|seed_range| {
             maps.iter()
                 .fold(vec![seed_range], |acc, m| m.convert_ranges(acc))
