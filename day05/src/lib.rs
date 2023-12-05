@@ -88,7 +88,7 @@ impl<'a> Map<'a> {
                         destination_ranges.push(dest);
                         remaining
                     } else {
-                        vec![r]
+                        MaybeTwo::One(r)
                     }
                 })
                 .collect();
@@ -116,7 +116,10 @@ impl MapRange {
         })
     }
 
-    fn convert_range(&self, range: &Range<usize>) -> Option<(Range<usize>, Vec<Range<usize>>)> {
+    fn convert_range(
+        &self,
+        range: &Range<usize>,
+    ) -> Option<(Range<usize>, MaybeTwo<Range<usize>>)> {
         if range.end <= self.source.start || range.start >= self.source.end {
             // Range is outside mapping range
             None
@@ -125,13 +128,13 @@ impl MapRange {
                 // Range is fully contained in mapping range
                 let start = range.start - self.source.start + self.destination.start;
                 let end = range.end - self.source.start + self.destination.start;
-                Some((start..end, vec![]))
+                Some((start..end, MaybeTwo::None))
             } else {
                 // Range overlaps end of mapping range
                 let start = range.start - self.source.start + self.destination.start;
                 let end = self.destination.end;
                 let after = self.source.end..range.end;
-                Some((start..end, vec![after]))
+                Some((start..end, MaybeTwo::One(after)))
             }
         } else if range.end > self.source.end {
             // Range surrounds mapping range
@@ -139,13 +142,52 @@ impl MapRange {
             let end = self.destination.end;
             let before = range.start..self.source.start;
             let after = self.source.end..range.end;
-            Some((start..end, vec![before, after]))
+            Some((start..end, MaybeTwo::Two(before, after)))
         } else {
             // Range overlaps start of mapping range
             let start = self.destination.start;
             let end = range.end - self.source.start + self.destination.start;
             let before = range.start..self.source.start;
-            Some((start..end, vec![before]))
+            Some((start..end, MaybeTwo::One(before)))
+        }
+    }
+}
+
+enum MaybeTwo<T: Clone> {
+    None,
+    One(T),
+    Two(T, T),
+}
+
+impl<T: Clone> IntoIterator for MaybeTwo<T> {
+    type Item = T;
+
+    type IntoIter = MaybeTwoIterator<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        MaybeTwoIterator(self, 0)
+    }
+}
+struct MaybeTwoIterator<T: Clone>(MaybeTwo<T>, i8);
+
+impl<T: Clone> Iterator for MaybeTwoIterator<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self(MaybeTwo::One(x), 0) => {
+                self.1 += 1;
+                Some(x.clone())
+            }
+            Self(MaybeTwo::Two(x, _), 0) => {
+                self.1 += 1;
+                Some(x.clone())
+            }
+            Self(MaybeTwo::Two(_, x), 1) => {
+                self.1 += 1;
+                Some(x.clone())
+            }
+            _ => None,
         }
     }
 }
