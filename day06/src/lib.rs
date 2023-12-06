@@ -31,9 +31,19 @@ fn get_value_line(line: &str, expected: &str) -> usize {
 }
 
 fn count_win_scenarios((race_length, record): (usize, usize)) -> usize {
-    (0..race_length)
-        .filter(|x| is_winner(race_length, *x, record))
-        .count()
+    let mut low = 0;
+    let mut high = race_length / 2;
+
+    while low + 1 < high {
+        let mid = low + (high - low) / 2;
+        if is_winner(race_length, mid, record) {
+            high = mid;
+        } else {
+            low = mid;
+        }
+    }
+
+    race_length + 1 - high * 2
 }
 
 fn is_winner(race_length: usize, hold_time: usize, record: usize) -> bool {
