@@ -5,7 +5,7 @@ pub fn solve_part1(input: &str) -> usize {
     times
         .into_iter()
         .zip(distances)
-        .map(|(time, distance)| (0..time).filter(|x| (time - x) * x > distance).count())
+        .map(count_win_scenarios)
         .product()
 }
 
@@ -13,15 +13,13 @@ pub fn solve_part2(input: &str) -> usize {
     let mut lines = input.lines();
     let time = get_value_line(lines.next().unwrap(), "Time");
     let distance = get_value_line(lines.next().unwrap(), "Distance");
-    (0..time).filter(|x| (time - x) * x > distance).count()
+    count_win_scenarios((time, distance))
 }
 
-fn get_data_line(line: &str, expected: &str) -> Vec<usize> {
+fn get_data_line<'a>(line: &'a str, expected: &str) -> impl Iterator<Item = usize> + 'a {
     let (label, data) = line.split_once(':').unwrap();
     debug_assert!(label == expected);
-    data.split_ascii_whitespace()
-        .filter_map(|s| s.parse().ok())
-        .collect()
+    data.split_ascii_whitespace().filter_map(|s| s.parse().ok())
 }
 
 fn get_value_line(line: &str, expected: &str) -> usize {
@@ -30,6 +28,16 @@ fn get_value_line(line: &str, expected: &str) -> usize {
     String::from_iter(data.split_ascii_whitespace().flat_map(|s| s.chars()))
         .parse()
         .unwrap()
+}
+
+fn count_win_scenarios((race_length, record): (usize, usize)) -> usize {
+    (0..race_length)
+        .filter(|x| is_winner(race_length, *x, record))
+        .count()
+}
+
+fn is_winner(race_length: usize, hold_time: usize, record: usize) -> bool {
+    (race_length - hold_time) * hold_time > record
 }
 
 pub const EXAMPLE: &str = include_str!("../example.txt");
