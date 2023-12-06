@@ -31,23 +31,11 @@ fn get_value_line(line: &str, expected: &str) -> usize {
 }
 
 fn count_win_scenarios((race_length, record): (usize, usize)) -> usize {
-    let mut low = 0;
-    let mut high = race_length / 2;
-
-    while low + 1 < high {
-        let mid = low + (high - low) / 2;
-        if is_winner(race_length, mid, record) {
-            high = mid;
-        } else {
-            low = mid;
-        }
-    }
-
-    race_length + 1 - high * 2
-}
-
-fn is_winner(race_length: usize, hold_time: usize, record: usize) -> bool {
-    (race_length - hold_time) * hold_time > record
+    let a = race_length * race_length - record * 4;
+    let b = (a as f64).sqrt();
+    let c = (race_length as f64) - b;
+    let d = (c / 2.0).floor() as usize + 1;
+    race_length + 1 - d * 2
 }
 
 pub const EXAMPLE: &str = include_str!("../example.txt");
