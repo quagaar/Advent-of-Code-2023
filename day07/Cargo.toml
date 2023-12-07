@@ -13,6 +13,7 @@ name = "day07"
 test = false
 
 [dependencies]
+itertools.workspace = true
 runner = { path = "../utils/runner" }
 
 [dev-dependencies]
