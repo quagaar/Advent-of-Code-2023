@@ -14,6 +14,7 @@ test = false
 
 [dependencies]
 num = "0.4.1"
+rayon.workspace = true
 runner = { path = "../utils/runner" }
 
 [dev-dependencies]

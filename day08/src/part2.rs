@@ -1,4 +1,5 @@
 use num::Integer;
+use rayon::prelude::*;
 use std::collections::{hash_map::Entry, HashMap, HashSet};
 
 pub fn solve_part2(input: &str) -> usize {
@@ -16,7 +17,7 @@ pub fn solve_part2(input: &str) -> usize {
         .collect::<Vec<&str>>();
 
     let repeat_info = start_locations
-        .into_iter()
+        .into_par_iter()
         .map(|start| get_repeat_info(start, directions, &map))
         .collect::<Vec<_>>();
 
