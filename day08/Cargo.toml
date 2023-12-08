@@ -1,0 +1,25 @@
+[package]
+name = "day08"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+doctest = false
+
+[[bin]]
+name = "day08"
+test = false
+
+[dependencies]
+num = "0.4.1"
+runner = { path = "../utils/runner" }
+
+[dev-dependencies]
+criterion = { workspace = true }
+bencher = { path = "../utils/bencher" }
+
+[[bench]]
+name = "benchmark"
+harness = false
