@@ -30,23 +30,26 @@ fn read_map_line(line: &str) -> Option<(&str, (&str, &str))> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::*;
+    use super::super::INPUT;
     use super::*;
 
+    const EXAMPLE1: &str = include_str!("../example.txt");
+    const EXAMPLE2: &str = include_str!("../example2.txt");
+
     #[test]
-    fn part1_example() {
-        let result = solve_part1(EXAMPLE);
+    fn example1() {
+        let result = solve_part1(EXAMPLE1);
         assert_eq!(result, 2);
     }
 
     #[test]
-    fn part1_example2() {
+    fn example2() {
         let result = solve_part1(EXAMPLE2);
         assert_eq!(result, 6);
     }
 
     #[test]
-    fn part1_result() {
+    fn result() {
         let result = solve_part1(INPUT);
         assert_eq!(result, 21797);
     }

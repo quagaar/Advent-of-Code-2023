@@ -97,17 +97,19 @@ fn get_repeat_info<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::super::*;
+    use super::super::INPUT;
     use super::*;
 
+    const EXAMPLE: &str = include_str!("../example3.txt");
+
     #[test]
-    fn part2_example() {
-        let result = solve_part2(EXAMPLE3);
+    fn example() {
+        let result = solve_part2(EXAMPLE);
         assert_eq!(result, 6);
     }
 
     #[test]
-    fn part2_result() {
+    fn result() {
         let result = solve_part2(INPUT);
         assert_eq!(result, 23977527174353);
     }

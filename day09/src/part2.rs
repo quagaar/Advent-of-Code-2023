@@ -27,17 +27,19 @@ fn find_previous_value(numbers: Vec<i32>) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use super::super::*;
+    use super::super::INPUT;
     use super::*;
 
+    const EXAMPLE: &str = include_str!("../example.txt");
+
     #[test]
-    fn part2_example() {
+    fn example() {
         let result = solve_part2(EXAMPLE);
         assert_eq!(result, 2);
     }
 
     #[test]
-    fn part2_result() {
+    fn result() {
         let result = solve_part2(INPUT);
         assert_eq!(result, 1112);
     }

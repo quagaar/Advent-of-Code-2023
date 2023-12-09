@@ -165,17 +165,19 @@ fn count_cards(hand: &str) -> (CardCounts, u32) {
 
 #[cfg(test)]
 mod tests {
-    use super::super::*;
+    use super::super::INPUT;
     use super::*;
 
+    const EXAMPLE: &str = include_str!("../example.txt");
+
     #[test]
-    fn part1_example() {
+    fn example() {
         let result = solve_part1(EXAMPLE);
         assert_eq!(result, 6440);
     }
 
     #[test]
-    fn part1_result() {
+    fn result() {
         let result = solve_part1(INPUT);
         assert_eq!(result, 250347426);
     }
