@@ -1,5 +1,7 @@
+use rayon::prelude::*;
+
 pub fn solve_part2(input: &str) -> i32 {
-    input.lines().map(process_line).sum()
+    input.par_lines().map(process_line).sum()
 }
 
 fn process_line(line: &str) -> i32 {
