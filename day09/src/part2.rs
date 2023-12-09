@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 
-pub fn solve_part2(input: &str) -> i32 {
+pub fn solve(input: &str) -> i32 {
     input.par_lines().map(process_line).sum()
 }
 
@@ -34,13 +34,13 @@ mod tests {
 
     #[test]
     fn example() {
-        let result = solve_part2(EXAMPLE);
+        let result = solve(EXAMPLE);
         assert_eq!(result, 2);
     }
 
     #[test]
     fn result() {
-        let result = solve_part2(INPUT);
+        let result = solve(INPUT);
         assert_eq!(result, 1112);
     }
 }
