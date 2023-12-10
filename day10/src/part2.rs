@@ -25,48 +25,33 @@ pub fn solve(input: &str) -> usize {
     }
     pipe.insert((l1.row, l1.column));
 
-    map.into_iter()
-        .enumerate()
-        .map(|(row, map_line)| {
-            map_line
-                .iter()
-                .enumerate()
-                .fold(
-                    (0, false, b'.'),
-                    |(count, inside, pipe_state), (column, cell)| {
-                        if pipe.contains(&(row, column)) {
-                            let real_cell = if *cell == b'S' { start_pipe } else { *cell };
-                            match real_cell {
-                                b'|' => (count, !inside, b'.'),
-                                b'-' => (count, inside, pipe_state),
-                                b'L' => (count, !inside, b'L'),
-                                b'F' => (count, !inside, b'F'),
-                                b'J' => {
-                                    if pipe_state == b'F' {
-                                        (count, inside, b'.')
-                                    } else {
-                                        (count, !inside, b'.')
-                                    }
-                                }
-                                b'7' => {
-                                    if pipe_state == b'L' {
-                                        (count, inside, b'.')
-                                    } else {
-                                        (count, !inside, b'.')
-                                    }
-                                }
-                                _ => unreachable!(),
-                            }
-                        } else if inside {
-                            (count + 1, inside, b'.')
-                        } else {
-                            (count, inside, b'.')
+    let len = map.len() + map[0].len() - 1;
+    let res: usize = (0..len)
+        .map(|n| {
+            let start_row = n.saturating_sub(map[0].len() - 1);
+            let end_row = (n + 1).clamp(1, map.len());
+            (start_row..end_row)
+                .fold((0, false), |(count, inside), row| {
+                    let column = n - row;
+                    if pipe.contains(&(row, column)) {
+                        match map[row][column] {
+                            b'|' | b'-' | b'7' | b'L' => (count, !inside),
+                            b'S' => match start_pipe {
+                                b'|' | b'-' | b'7' | b'L' => (count, !inside),
+                                _ => (count, inside),
+                            },
+                            _ => (count, inside),
                         }
-                    },
-                )
+                    } else if inside {
+                        (count + 1, inside)
+                    } else {
+                        (count, inside)
+                    }
+                })
                 .0
         })
-        .sum()
+        .sum();
+    res
 }
 
 fn find_start(map: &[&[u8]]) -> (usize, usize) {
