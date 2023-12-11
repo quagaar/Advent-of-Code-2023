@@ -2,11 +2,10 @@ pub fn solve(input: &str) -> usize {
     let galaxies = get_galaxies(input);
 
     (0..galaxies.len() - 1)
-        .map(|n| {
+        .flat_map(|n| {
             let mut it = galaxies.iter().skip(n).copied();
             let galaxy = it.next().unwrap();
-            it.map(|other| galaxy.0.abs_diff(other.0) + galaxy.1.abs_diff(other.1))
-                .sum::<usize>()
+            it.map(move |other| galaxy.0.abs_diff(other.0) + galaxy.1.abs_diff(other.1))
         })
         .sum()
 }
