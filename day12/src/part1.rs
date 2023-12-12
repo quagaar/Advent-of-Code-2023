@@ -1,56 +1,73 @@
-use std::iter::from_fn;
+use rayon::prelude::*;
+use std::{collections::HashMap, iter::from_fn};
 
 pub fn solve(input: &str) -> usize {
-    input.lines().map(process_line).sum()
+    input.par_lines().map(process_line).sum()
 }
 
 fn process_line(line: &str) -> usize {
-    let (pattern, counts) = line.split_once(' ').unwrap();
+    let (pattern, group_sizes) = line.split_once(' ').unwrap();
 
-    counts
+    group_sizes
         .split(',')
         .filter_map(|s| s.parse::<usize>().ok())
-        .fold(initial_states(pattern), |acc, count| {
-            Box::new(
-                acc.filter(move |s| has_count_hashes(s, count))
-                    .map(move |s| &s[count..])
-                    .flat_map(after_hashes_states),
-            )
+        .fold(initial_states(pattern), |acc, group_size| {
+            acc.into_iter()
+                .filter(|(start_pos, _)| is_valid_group(&pattern[*start_pos..], group_size))
+                .map(|(start_pos, count)| (start_pos + group_size, count))
+                .flat_map(|(pos, count)| {
+                    after_hashes_positions(&pattern[pos..]).map(move |offset| (pos + offset, count))
+                })
+                .fold(HashMap::new(), |mut acc, (pos, count)| {
+                    acc.entry(pos)
+                        .and_modify(|total| *total += count)
+                        .or_insert(count);
+                    acc
+                })
         })
-        .filter(|s| s.is_empty())
-        .count()
+        .into_iter()
+        .filter(|(pos, _)| *pos == pattern.len())
+        .map(|(_, count)| count)
+        .sum()
 }
 
-fn initial_states<'a>(pattern: &'a str) -> Box<dyn Iterator<Item = &'a str> + 'a> {
-    Box::new(
-        (0..pattern.len())
-            .take_while(|n| *n == 0 || pattern.chars().nth(n - 1) != Some('#'))
-            .map(|n| &pattern[n..]),
-    )
+fn initial_states(pattern: &str) -> HashMap<usize, usize> {
+    (0..pattern.len())
+        .take_while(|n| *n == 0 || pattern.chars().nth(n - 1) != Some('#'))
+        .map(|n| (n, 1))
+        .collect()
 }
 
-fn has_count_hashes(pattern: &str, count: usize) -> bool {
-    (0..count).all(|n| matches!(pattern.chars().nth(n), Some('#') | Some('?')))
+fn is_valid_group(substring: &str, group_size: usize) -> bool {
+    (0..group_size).all(|n| matches!(substring.chars().nth(n), Some('#') | Some('?')))
+        && substring.chars().nth(group_size) != Some('#')
 }
 
-fn after_hashes_states(pattern: &str) -> impl Iterator<Item = &str> {
-    let mut n = 0;
+fn after_hashes_positions(pattern: &str) -> impl Iterator<Item = usize> + '_ {
+    let mut pos = Some(0);
     from_fn(move || {
-        if pattern.is_empty() {
-            if n == 0 {
-                n += 1;
-                Some(pattern)
+        if let Some(mut n) = pos {
+            if pattern.is_empty() {
+                pos = None;
+                Some(0)
             } else {
-                None
+                loop {
+                    n += 1;
+                    match pattern.chars().nth(n) {
+                        Some('.') => continue,
+                        Some('?') => {
+                            pos = Some(n);
+                            break Some(n);
+                        }
+                        _ => {
+                            pos = None;
+                            break Some(n);
+                        }
+                    }
+                }
             }
         } else {
-            match pattern.chars().nth(n) {
-                Some('?') | Some('.') => {
-                    n += 1;
-                    Some(&pattern[n..])
-                }
-                _ => None,
-            }
+            None
         }
     })
 }
