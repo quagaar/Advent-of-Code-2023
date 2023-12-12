@@ -15,53 +15,60 @@ fn process_line(line: &str) -> usize {
         .split(',')
         .filter_map(|s| s.parse::<usize>().ok())
         .fold(initial_states(pattern.as_str()), |acc, count| {
-            let mut memo = HashMap::new();
-
-            acc.filter(move |(s, _)| has_count_hashes(s, count))
-                .map(move |(s, n)| (&s[count..], n))
-                .for_each(|(s, n)| {
-                    for after in after_hashes_states(s) {
-                        *memo.entry(after).or_insert(0) += n;
-                    }
-                });
-
-            Box::new(memo.into_iter())
+            acc.into_iter()
+                .filter(|(n, _)| has_count_hashes(&pattern[*n..], count))
+                .map(|(n, m)| (n + count, m))
+                .flat_map(|(n, m)| {
+                    after_hashes_positions(&pattern[n..]).map(move |pos| (n + pos, m))
+                })
+                .fold(HashMap::new(), |mut acc, (n, m)| {
+                    acc.entry(n).and_modify(|x| *x += m).or_insert(m);
+                    acc
+                })
         })
-        .filter(|(s, _)| s.is_empty())
+        .into_iter()
+        .filter(|(n, _)| *n == pattern.len())
         .map(|(_, n)| n)
         .sum()
 }
 
-fn initial_states<'a>(pattern: &'a str) -> Box<dyn Iterator<Item = (&'a str, usize)> + 'a> {
-    Box::new(
-        (0..pattern.len())
-            .take_while(|n| *n == 0 || pattern.chars().nth(n - 1) != Some('#'))
-            .map(|n| (&pattern[n..], 1)),
-    )
+fn initial_states(pattern: &str) -> HashMap<usize, usize> {
+    (0..pattern.len())
+        .take_while(|n| *n == 0 || pattern.chars().nth(n - 1) != Some('#'))
+        .map(|n| (n, 1))
+        .collect()
 }
 
 fn has_count_hashes(pattern: &str, count: usize) -> bool {
     (0..count).all(|n| matches!(pattern.chars().nth(n), Some('#') | Some('?')))
+        && pattern.chars().nth(count) != Some('#')
 }
 
-fn after_hashes_states(pattern: &str) -> impl Iterator<Item = &str> {
-    let mut n = 0;
+fn after_hashes_positions(pattern: &str) -> impl Iterator<Item = usize> + '_ {
+    let mut pos = Some(0);
     from_fn(move || {
-        if pattern.is_empty() {
-            if n == 0 {
-                n += 1;
-                Some(pattern)
+        if let Some(mut n) = pos {
+            if pattern.is_empty() {
+                pos = None;
+                Some(0)
             } else {
-                None
+                loop {
+                    n += 1;
+                    match pattern.chars().nth(n) {
+                        Some('.') => continue,
+                        Some('?') => {
+                            pos = Some(n);
+                            break Some(n);
+                        }
+                        _ => {
+                            pos = None;
+                            break Some(n);
+                        }
+                    }
+                }
             }
         } else {
-            match pattern.chars().nth(n) {
-                Some('?') | Some('.') => {
-                    n += 1;
-                    Some(&pattern[n..])
-                }
-                _ => None,
-            }
+            None
         }
     })
 }
