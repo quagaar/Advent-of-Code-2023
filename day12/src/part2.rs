@@ -1,5 +1,5 @@
 use rayon::prelude::*;
-use std::{collections::HashMap, iter::from_fn};
+use std::{collections::HashMap, iter::from_fn, usize};
 
 pub fn solve(input: &str) -> usize {
     input.par_lines().map(process_line).sum()
@@ -14,12 +14,10 @@ fn process_line(line: &str) -> usize {
     group_sizes
         .split(',')
         .filter_map(|s| s.parse::<usize>().ok())
-        .fold(initial_states(pattern.as_str()), |acc, group_size| {
+        .fold(initial_state(), |acc, group_size| {
             acc.into_iter()
-                .filter(|(start_pos, _)| is_valid_group(&pattern[*start_pos..], group_size))
-                .map(|(start_pos, count)| (start_pos + group_size, count))
-                .flat_map(|(pos, count)| {
-                    after_hashes_positions(&pattern[pos..]).map(move |offset| (pos + offset, count))
+                .flat_map(|(start_pos, count)| {
+                    find_damaged_groups(&pattern, group_size, start_pos, count)
                 })
                 .fold(HashMap::new(), |mut acc, (pos, count)| {
                     acc.entry(pos)
@@ -29,50 +27,59 @@ fn process_line(line: &str) -> usize {
                 })
         })
         .into_iter()
-        .filter(|(pos, _)| *pos == pattern.len())
+        .filter(|(pos, _)| pattern[*pos..].find('#').is_none())
         .map(|(_, count)| count)
         .sum()
 }
 
-fn initial_states(pattern: &str) -> HashMap<usize, usize> {
-    (0..pattern.len())
-        .take_while(|n| *n == 0 || pattern.chars().nth(n - 1) != Some('#'))
-        .map(|n| (n, 1))
-        .collect()
+fn initial_state() -> HashMap<usize, usize> {
+    let mut map = HashMap::new();
+    map.insert(0, 1);
+    map
 }
 
-fn is_valid_group(substring: &str, group_size: usize) -> bool {
-    (0..group_size).all(|n| matches!(substring.chars().nth(n), Some('#') | Some('?')))
-        && substring.chars().nth(group_size) != Some('#')
-}
-
-fn after_hashes_positions(pattern: &str) -> impl Iterator<Item = usize> + '_ {
-    let mut pos = Some(0);
-    from_fn(move || {
-        if let Some(mut n) = pos {
-            if pattern.is_empty() {
-                pos = None;
-                Some(0)
-            } else {
-                loop {
-                    n += 1;
-                    match pattern.chars().nth(n) {
-                        Some('.') => continue,
-                        Some('?') => {
-                            pos = Some(n);
-                            break Some(n);
-                        }
-                        _ => {
-                            pos = None;
-                            break Some(n);
-                        }
-                    }
+fn find_damaged_groups(
+    pattern: &str,
+    group_size: usize,
+    start_pos: usize,
+    count: usize,
+) -> impl Iterator<Item = (usize, usize)> + '_ {
+    let mut pos = start_pos;
+    from_fn(move || loop {
+        match pattern.chars().nth(pos) {
+            Some('#') => {
+                if let Some(after) = find_after_pos(pattern, pos, group_size) {
+                    pos = pattern.len();
+                    break Some((after, count));
+                } else {
+                    break None;
                 }
             }
-        } else {
-            None
+            Some('?') => {
+                if let Some(after) = find_after_pos(pattern, pos, group_size) {
+                    pos += 1;
+                    break Some((after, count));
+                } else {
+                    pos += 1;
+                }
+            }
+            None => break None,
+            _ => pos += 1,
         }
     })
+}
+
+fn find_after_pos(pattern: &str, start_pos: usize, group_size: usize) -> Option<usize> {
+    if (1..group_size).all(|n| matches!(pattern.chars().nth(start_pos + n), Some('#') | Some('?')))
+    {
+        match pattern.chars().nth(start_pos + group_size) {
+            Some('?') | Some('.') => Some(start_pos + group_size + 1),
+            None => Some(start_pos + group_size),
+            _ => None,
+        }
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]
