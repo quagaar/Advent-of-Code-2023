@@ -6,29 +6,31 @@ pub fn solve(input: &str) -> usize {
 }
 
 fn process_line(line: &str) -> usize {
-    let (pattern, counts) = line.split_once(' ').unwrap();
+    let (pattern, group_sizes) = line.split_once(' ').unwrap();
 
     let pattern = format!("{0}?{0}?{0}?{0}?{0}", pattern);
-    let counts = format!("{0},{0},{0},{0},{0}", counts);
+    let group_sizes = format!("{0},{0},{0},{0},{0}", group_sizes);
 
-    counts
+    group_sizes
         .split(',')
         .filter_map(|s| s.parse::<usize>().ok())
-        .fold(initial_states(pattern.as_str()), |acc, count| {
+        .fold(initial_states(pattern.as_str()), |acc, group_size| {
             acc.into_iter()
-                .filter(|(n, _)| has_count_hashes(&pattern[*n..], count))
-                .map(|(n, m)| (n + count, m))
-                .flat_map(|(n, m)| {
-                    after_hashes_positions(&pattern[n..]).map(move |pos| (n + pos, m))
+                .filter(|(start_pos, _)| is_valid_group(&pattern[*start_pos..], group_size))
+                .map(|(start_pos, count)| (start_pos + group_size, count))
+                .flat_map(|(pos, count)| {
+                    after_hashes_positions(&pattern[pos..]).map(move |offset| (pos + offset, count))
                 })
-                .fold(HashMap::new(), |mut acc, (n, m)| {
-                    acc.entry(n).and_modify(|x| *x += m).or_insert(m);
+                .fold(HashMap::new(), |mut acc, (pos, count)| {
+                    acc.entry(pos)
+                        .and_modify(|total| *total += count)
+                        .or_insert(count);
                     acc
                 })
         })
         .into_iter()
-        .filter(|(n, _)| *n == pattern.len())
-        .map(|(_, n)| n)
+        .filter(|(pos, _)| *pos == pattern.len())
+        .map(|(_, count)| count)
         .sum()
 }
 
@@ -39,9 +41,9 @@ fn initial_states(pattern: &str) -> HashMap<usize, usize> {
         .collect()
 }
 
-fn has_count_hashes(pattern: &str, count: usize) -> bool {
-    (0..count).all(|n| matches!(pattern.chars().nth(n), Some('#') | Some('?')))
-        && pattern.chars().nth(count) != Some('#')
+fn is_valid_group(substring: &str, group_size: usize) -> bool {
+    (0..group_size).all(|n| matches!(substring.chars().nth(n), Some('#') | Some('?')))
+        && substring.chars().nth(group_size) != Some('#')
 }
 
 fn after_hashes_positions(pattern: &str) -> impl Iterator<Item = usize> + '_ {
