@@ -19,7 +19,7 @@ fn process_pattern(pattern: &str) -> usize {
         .filter(|pos| is_horizontal_reflection(&map, *pos))
         .collect::<Vec<_>>();
 
-    debug_assert!(vertical_lines.len() | horizontal_lines.len() == 1);
+    debug_assert!(vertical_lines.len() + horizontal_lines.len() == 1);
 
     vertical_lines.into_iter().sum::<usize>() + horizontal_lines.into_iter().sum::<usize>() * 100
 }

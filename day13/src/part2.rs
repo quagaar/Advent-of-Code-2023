@@ -26,7 +26,7 @@ fn process_pattern(pattern: &str) -> usize {
         .filter(|pos| count_horizontal_smudges(&map, *pos) == 1)
         .collect::<Vec<_>>();
 
-    debug_assert!(vertical_lines.len() | horizontal_lines.len() == 1);
+    debug_assert!(vertical_lines.len() + horizontal_lines.len() == 1);
 
     vertical_lines.into_iter().sum::<usize>() + horizontal_lines.into_iter().sum::<usize>() * 100
 }
