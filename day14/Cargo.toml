@@ -13,6 +13,7 @@ name = "day14"
 test = false
 
 [dependencies]
+grid.workspace = true
 runner = { path = "../utils/runner" }
 
 [dev-dependencies]

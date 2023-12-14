@@ -1,54 +1,45 @@
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-};
+use grid::Grid;
 
 pub fn solve(input: &str) -> usize {
     get_north_load_after_cycles(input, 1000000000)
 }
 
 fn get_north_load_after_cycles(input: &str, cycles: usize) -> usize {
-    let mut map: Vec<Vec<u8>> = input.lines().map(|s| s.as_bytes().to_vec()).collect();
+    let map: Vec<&[u8]> = input.lines().map(str::as_bytes).collect();
+    let width = map[0].len();
+    let mut grid = Grid::from_vec(map.into_iter().flatten().copied().collect(), width);
 
     let mut history = vec![];
     for n in 0..cycles {
-        roll_cycle(&mut map);
+        roll_cycle(&mut grid);
 
-        let mut hasher = DefaultHasher::new();
-        map.hash(&mut hasher);
-        let hash = hasher.finish();
-
-        if let Some((prev, _)) = history
-            .iter()
-            .enumerate()
-            .find(|(_, (other, _))| *other == hash)
-        {
-            let pos = prev + ((cycles - prev) % (n - prev)) - 1;
-            return history[pos].1;
+        if let Some(prev) = history.iter().position(|other| *other == grid) {
+            let pos = prev + ((cycles - prev - 1) % (n - prev));
+            return north_load(&history[pos]);
         }
 
-        history.push((hash, north_load(&map)));
+        history.push(grid.clone());
     }
 
-    history.last().unwrap().1
+    north_load(&grid)
 }
 
-fn roll_cycle(map: &mut Vec<Vec<u8>>) {
-    roll_north(map);
-    roll_west(map);
-    roll_south(map);
-    roll_east(map);
+fn roll_cycle(grid: &mut Grid<u8>) {
+    roll_north(grid);
+    roll_west(grid);
+    roll_south(grid);
+    roll_east(grid);
 }
 
-fn roll_north(map: &mut Vec<Vec<u8>>) {
-    for col in 0..map[0].len() {
+fn roll_north(grid: &mut Grid<u8>) {
+    for col in 0..grid.cols() {
         let mut insert_row = 0;
-        for row in 0..map.len() {
-            match map[row][col] {
+        for row in 0..grid.rows() {
+            match grid[(row, col)] {
                 b'O' => {
                     if insert_row != row {
-                        map[insert_row][col] = b'O';
-                        map[row][col] = b'.';
+                        grid[(insert_row, col)] = b'O';
+                        grid[(row, col)] = b'.';
                     }
                     insert_row += 1;
                 }
@@ -61,15 +52,15 @@ fn roll_north(map: &mut Vec<Vec<u8>>) {
     }
 }
 
-fn roll_west(map: &mut [Vec<u8>]) {
-    for row in map.iter_mut() {
+fn roll_west(grid: &mut Grid<u8>) {
+    for row in 0..grid.rows() {
         let mut insert_col = 0;
-        for col in 0..row.len() {
-            match row[col] {
+        for col in 0..grid.cols() {
+            match grid[(row, col)] {
                 b'O' => {
                     if insert_col != col {
-                        row[insert_col] = b'O';
-                        row[col] = b'.';
+                        grid[(row, insert_col)] = b'O';
+                        grid[(row, col)] = b'.';
                     }
                     insert_col += 1;
                 }
@@ -82,15 +73,15 @@ fn roll_west(map: &mut [Vec<u8>]) {
     }
 }
 
-fn roll_south(map: &mut Vec<Vec<u8>>) {
-    for col in 0..map[0].len() {
-        let mut insert_row = map.len() - 1;
-        for row in (0..map.len()).rev() {
-            match map[row][col] {
+fn roll_south(grid: &mut Grid<u8>) {
+    for col in 0..grid.cols() {
+        let mut insert_row = grid.rows() - 1;
+        for row in (0..grid.rows()).rev() {
+            match grid[(row, col)] {
                 b'O' => {
                     if insert_row != row {
-                        map[insert_row][col] = b'O';
-                        map[row][col] = b'.';
+                        grid[(insert_row, col)] = b'O';
+                        grid[(row, col)] = b'.';
                     }
                     insert_row = insert_row.saturating_sub(1);
                 }
@@ -103,15 +94,15 @@ fn roll_south(map: &mut Vec<Vec<u8>>) {
     }
 }
 
-fn roll_east(map: &mut [Vec<u8>]) {
-    for row in map.iter_mut() {
-        let mut insert_col = row.len() - 1;
-        for col in (0..row.len()).rev() {
-            match row[col] {
+fn roll_east(grid: &mut Grid<u8>) {
+    for row in 0..grid.rows() {
+        let mut insert_col = grid.cols() - 1;
+        for col in (0..grid.cols()).rev() {
+            match grid[(row, col)] {
                 b'O' => {
                     if insert_col != col {
-                        row[insert_col] = b'O';
-                        row[col] = b'.';
+                        grid[(row, insert_col)] = b'O';
+                        grid[(row, col)] = b'.';
                     }
                     insert_col = insert_col.saturating_sub(1);
                 }
@@ -124,10 +115,10 @@ fn roll_east(map: &mut [Vec<u8>]) {
     }
 }
 
-fn north_load(map: &Vec<Vec<u8>>) -> usize {
-    map.iter()
+fn north_load(grid: &Grid<u8>) -> usize {
+    grid.iter_rows()
         .enumerate()
-        .map(|(row, data)| data.iter().filter(|c| **c == b'O').count() * (map.len() - row))
+        .map(|(row, data)| data.filter(|c| **c == b'O').count() * (grid.rows() - row))
         .sum()
 }
 
