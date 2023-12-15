@@ -1,9 +1,8 @@
 pub fn solve(input: &str) -> usize {
-    const INIT_VEC: Vec<(&str, u8)> = vec![];
     input
         .trim_end()
         .split(',')
-        .fold([INIT_VEC; 256], |mut acc, s| {
+        .fold(vec![vec![]; 256], |mut acc, s| {
             if let Some(label) = s.strip_suffix('-') {
                 let box_no = hash(label);
                 acc[box_no].retain(|(l, _)| *l != label);
