@@ -1,25 +1,31 @@
+use std::collections::HashMap;
+
 pub fn solve(input: &str) -> usize {
     input
         .trim_end()
         .split(',')
-        .fold(vec![vec![]; 256], |mut acc, s| {
+        .fold(HashMap::new(), |mut acc, s| {
             if let Some(label) = s.strip_suffix('-') {
                 let box_no = hash(label);
-                acc[box_no].retain(|(l, _)| *l != label);
+                acc.entry(box_no)
+                    .and_modify(|lenses: &mut Vec<(&str, u8)>| lenses.retain(|(l, _)| *l != label));
             } else {
                 let (label, focal_length) = s.split_once('=').unwrap();
                 let box_no = hash(label);
                 let focal_length = focal_length.parse::<u8>().unwrap();
-                if let Some((_, x)) = acc[box_no].iter_mut().find(|(l, _)| *l == label) {
-                    *x = focal_length;
-                } else {
-                    acc[box_no].push((label, focal_length));
-                }
+                acc.entry(box_no)
+                    .and_modify(|lenses| {
+                        if let Some((_, x)) = lenses.iter_mut().find(|(l, _)| *l == label) {
+                            *x = focal_length;
+                        } else {
+                            lenses.push((label, focal_length));
+                        }
+                    })
+                    .or_insert(vec![(label, focal_length)]);
             }
             acc
         })
         .into_iter()
-        .enumerate()
         .map(|(box_no, lenses)| {
             (box_no + 1)
                 * lenses
