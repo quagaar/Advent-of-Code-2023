@@ -13,7 +13,7 @@ name = "day16"
 test = false
 
 [dependencies]
-arrayvec = "0.7.4"
+arrayvec.workspace = true
 grid.workspace = true
 itertools.workspace = true
 rayon.workspace = true

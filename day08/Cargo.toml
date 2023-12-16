@@ -13,7 +13,7 @@ name = "day08"
 test = false
 
 [dependencies]
-num = "0.4.1"
+num.workspace = true
 rayon.workspace = true
 runner = { path = "../utils/runner" }
 
