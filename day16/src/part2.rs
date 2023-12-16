@@ -172,11 +172,7 @@ impl Beam {
                     self,
                 ])
             }
-            _ => {
-                let mut result = ArrayVec::new();
-                result.push(self);
-                result
-            }
+            _ => ArrayVec::from_iter([self]),
         }
     }
 
@@ -192,11 +188,7 @@ impl Beam {
                     self,
                 ])
             }
-            _ => {
-                let mut result = ArrayVec::new();
-                result.push(self);
-                result
-            }
+            _ => ArrayVec::from_iter([self]),
         }
     }
 
