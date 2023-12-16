@@ -1,5 +1,6 @@
 use arrayvec::ArrayVec;
 use grid::Grid;
+use itertools::Itertools;
 use std::collections::{HashSet, VecDeque};
 
 pub fn solve(input: &str) -> usize {
@@ -10,7 +11,7 @@ pub fn solve(input: &str) -> usize {
             .into_iter()
             .flatten()
             .copied()
-            .flat_map(Tile::try_from)
+            .map(|c| Tile::try_from(c).unwrap())
             .collect(),
         width,
     );
@@ -20,7 +21,6 @@ pub fn solve(input: &str) -> usize {
         position: (0, 0),
     }]);
     let mut history = HashSet::new();
-    let mut energized = HashSet::new();
 
     while let Some(beam) = beams.pop_front() {
         if history.contains(&beam) {
@@ -28,7 +28,6 @@ pub fn solve(input: &str) -> usize {
         } else {
             history.insert(beam);
         }
-        energized.insert(beam.position);
         match grid[beam.position] {
             Tile::HSplitter => beam
                 .split_horizontal()
@@ -58,7 +57,7 @@ pub fn solve(input: &str) -> usize {
         }
     }
 
-    energized.len()
+    history.into_iter().unique_by(|beam| beam.position).count()
 }
 
 enum Tile {
@@ -79,7 +78,7 @@ impl TryFrom<u8> for Tile {
             b'\\' => Ok(Tile::NWMirror),
             b'-' => Ok(Tile::HSplitter),
             b'|' => Ok(Tile::VSplitter),
-            _ => Err(format!("Invalid tile type: {}", value)),
+            _ => Err(format!("Invalid tile type: {}", value as char)),
         }
     }
 }
