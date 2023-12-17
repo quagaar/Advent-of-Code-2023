@@ -1,9 +1,15 @@
-use arrayvec::ArrayVec;
 use grid::Grid;
-use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashSet},
-};
+use pathfinding::directed::dijkstra;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+enum Node {
+    Start(usize, usize),
+    Horizontal((usize, usize)),
+    Vertical((usize, usize)),
+}
+
+const MIN_STEPS: usize = 4;
+const MAX_STEPS: usize = 10;
 
 pub fn solve(input: &str) -> Option<usize> {
     let lines: Vec<&[u8]> = input.lines().map(str::as_bytes).collect();
@@ -14,160 +20,93 @@ pub fn solve(input: &str) -> Option<usize> {
     );
     let target_location = (grid.rows() - 1, grid.cols() - 1);
 
-    let mut queue = start_states(&grid);
-    let mut visited = HashSet::new();
-
-    while let Some(Reverse(state)) = queue.pop() {
-        if state.position == target_location {
-            return Some(state.cost);
-        } else {
-            let vertical = state.direction == Direction::Up || state.direction == Direction::Down;
-            if visited.insert((state.position, vertical)) {
-                queue.extend(state.next_states(&grid));
-            }
-        }
-    }
-
-    None
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-struct State {
-    cost: usize,
-    position: (usize, usize),
-    direction: Direction,
-}
-
-const MIN_STEPS: usize = 4;
-const MAX_STEPS: usize = 10;
-const NEXT_STATES_MAX: usize = (MAX_STEPS - MIN_STEPS + 1) * 2;
-
-fn start_states(grid: &Grid<u8>) -> BinaryHeap<Reverse<State>> {
-    let mut states = BinaryHeap::new();
-    let mut right_cost = (1..MIN_STEPS)
-        .filter_map(|n| grid.get(0, n))
-        .map(|n| *n as usize)
-        .sum();
-    let mut down_cost = (1..MIN_STEPS)
-        .filter_map(|n| grid.get(n, 0))
-        .map(|n| *n as usize)
-        .sum();
-    for n in MIN_STEPS..=MAX_STEPS {
-        if let Some(cost) = grid.get(0, n) {
-            right_cost += *cost as usize;
-            states.push(Reverse(State {
-                cost: right_cost,
-                position: (0, n),
-                direction: Direction::Right,
-            }));
-        }
-        if let Some(cost) = grid.get(n, 0) {
-            down_cost += *cost as usize;
-            states.push(Reverse(State {
-                cost: down_cost,
-                position: (n, 0),
-                direction: Direction::Down,
-            }))
-        }
-    }
-    states
-}
-
-impl State {
-    fn next_states(&self, grid: &Grid<u8>) -> ArrayVec<Reverse<State>, NEXT_STATES_MAX> {
-        let mut states = ArrayVec::new();
-        match self.direction {
-            Direction::Down | Direction::Up => {
-                let mut left_cost = self.left_cost(MIN_STEPS - 1, grid);
-                let mut right_cost = self.right_cost(MIN_STEPS - 1, grid);
-                for n in MIN_STEPS..=MAX_STEPS {
-                    if self.position.1 >= n {
-                        let position = (self.position.0, self.position.1 - n);
-                        left_cost += grid[position] as usize;
-                        states.push(Reverse(State {
-                            cost: left_cost,
-                            position,
-                            direction: Direction::Left,
-                        }))
+    dijkstra::dijkstra(
+        &Node::Start(0, 0),
+        |&node| {
+            let mut states = vec![];
+            match node {
+                Node::Start(row, column) => {
+                    let mut right_cost = right_cost(row, column, MIN_STEPS - 1, &grid);
+                    let mut down_cost = down_cost(row, column, MIN_STEPS - 1, &grid);
+                    for n in MIN_STEPS..=MAX_STEPS {
+                        if let Some(cost) = grid.get(row, column + n) {
+                            right_cost += *cost as usize;
+                            states.push((Node::Horizontal((row, column + n)), right_cost));
+                        }
+                        if let Some(cost) = grid.get(row + n, column) {
+                            down_cost += *cost as usize;
+                            states.push((Node::Vertical((row + n, column)), down_cost));
+                        }
                     }
-                    if self.position.1 + n < grid.cols() {
-                        let position = (self.position.0, self.position.1 + n);
-                        right_cost += grid[position] as usize;
-                        states.push(Reverse(State {
-                            cost: right_cost,
-                            position,
-                            direction: Direction::Right,
-                        }))
+                }
+                Node::Horizontal((row, column)) => {
+                    let mut up_cost = up_cost(row, column, MIN_STEPS - 1, &grid);
+                    let mut down_cost = down_cost(row, column, MIN_STEPS - 1, &grid);
+                    for n in MIN_STEPS..=MAX_STEPS {
+                        if row >= n {
+                            let position = (row - n, column);
+                            up_cost += grid[position] as usize;
+                            states.push((Node::Vertical(position), up_cost))
+                        }
+                        if row + n < grid.rows() {
+                            let position = (row + n, column);
+                            down_cost += grid[position] as usize;
+                            states.push((Node::Vertical(position), down_cost))
+                        }
+                    }
+                }
+                Node::Vertical((row, column)) => {
+                    let mut left_cost = left_cost(row, column, MIN_STEPS - 1, &grid);
+                    let mut right_cost = right_cost(row, column, MIN_STEPS - 1, &grid);
+                    for n in MIN_STEPS..=MAX_STEPS {
+                        if column >= n {
+                            let position = (row, column - n);
+                            left_cost += grid[position] as usize;
+                            states.push((Node::Horizontal(position), left_cost))
+                        }
+                        if column + n < grid.cols() {
+                            let position = (row, column + n);
+                            right_cost += grid[position] as usize;
+                            states.push((Node::Horizontal(position), right_cost))
+                        }
                     }
                 }
             }
-            Direction::Left | Direction::Right => {
-                let mut up_cost = self.up_cost(MIN_STEPS - 1, grid);
-                let mut down_cost = self.down_cost(MIN_STEPS - 1, grid);
-                for n in MIN_STEPS..=MAX_STEPS {
-                    if self.position.0 >= n {
-                        let position = (self.position.0 - n, self.position.1);
-                        up_cost += grid[position] as usize;
-                        states.push(Reverse(State {
-                            cost: up_cost,
-                            position,
-                            direction: Direction::Up,
-                        }))
-                    }
-                    if self.position.0 + n < grid.rows() {
-                        let position = (self.position.0 + n, self.position.1);
-                        down_cost += grid[position] as usize;
-                        states.push(Reverse(State {
-                            cost: down_cost,
-                            position,
-                            direction: Direction::Down,
-                        }))
-                    }
-                }
-            }
-        }
-        states
-    }
+            states
+        },
+        |&node| {
+            node == Node::Horizontal(target_location) || node == Node::Vertical(target_location)
+        },
+    )
+    .map(|(_, cost)| cost)
+}
 
-    fn right_cost(&self, steps: usize, grid: &Grid<u8>) -> usize {
-        self.cost
-            + (1..=steps)
-                .filter_map(|n| grid.get(self.position.0, self.position.1 + n))
-                .map(|n| *n as usize)
-                .sum::<usize>()
-    }
+fn right_cost(row: usize, column: usize, steps: usize, grid: &Grid<u8>) -> usize {
+    (1..=steps)
+        .filter_map(|n| grid.get(row, column + n))
+        .map(|n| *n as usize)
+        .sum::<usize>()
+}
 
-    fn left_cost(&self, steps: usize, grid: &Grid<u8>) -> usize {
-        self.cost
-            + (1..=steps)
-                .filter(|n| self.position.1 >= *n)
-                .map(|n| grid[(self.position.0, self.position.1 - n)] as usize)
-                .sum::<usize>()
-    }
+fn left_cost(row: usize, column: usize, steps: usize, grid: &Grid<u8>) -> usize {
+    (1..=steps)
+        .filter(|n| column >= *n)
+        .map(|n| grid[(row, column - n)] as usize)
+        .sum::<usize>()
+}
 
-    fn up_cost(&self, steps: usize, grid: &Grid<u8>) -> usize {
-        self.cost
-            + (1..=steps)
-                .filter(|n| self.position.0 >= *n)
-                .map(|n| grid[(self.position.0 - n, self.position.1)] as usize)
-                .sum::<usize>()
-    }
+fn up_cost(row: usize, column: usize, steps: usize, grid: &Grid<u8>) -> usize {
+    (1..=steps)
+        .filter(|n| row >= *n)
+        .map(|n| grid[(row - n, column)] as usize)
+        .sum::<usize>()
+}
 
-    fn down_cost(&self, steps: usize, grid: &Grid<u8>) -> usize {
-        self.cost
-            + (1..=steps)
-                .filter_map(|n| grid.get(self.position.0 + n, self.position.1))
-                .map(|n| *n as usize)
-                .sum::<usize>()
-    }
+fn down_cost(row: usize, column: usize, steps: usize, grid: &Grid<u8>) -> usize {
+    (1..=steps)
+        .filter_map(|n| grid.get(row + n, column))
+        .map(|n| *n as usize)
+        .sum::<usize>()
 }
 
 #[cfg(test)]

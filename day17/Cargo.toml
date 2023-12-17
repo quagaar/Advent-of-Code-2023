@@ -13,8 +13,8 @@ name = "day17"
 test = false
 
 [dependencies]
-arrayvec.workspace = true
 grid.workspace = true
+pathfinding.workspace = true
 runner = { path = "../utils/runner" }
 
 [dev-dependencies]
