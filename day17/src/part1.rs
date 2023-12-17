@@ -41,24 +41,28 @@ enum Direction {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct State {
+    f_score: usize,
     cost: usize,
     position: (usize, usize),
     direction: Direction,
 }
 
 fn start_states(grid: &Grid<u8>) -> BinaryHeap<Reverse<State>> {
+    let target_distance = grid.cols() + grid.rows() - 2;
     let mut states = BinaryHeap::new();
     let mut right_cost = 0;
     let mut down_cost = 0;
     for n in 1..=3 {
         right_cost += grid[(0, n)] as usize;
         states.push(Reverse(State {
+            f_score: right_cost + target_distance - n,
             cost: right_cost,
             position: (0, n),
             direction: Direction::Right,
         }));
         down_cost += grid[(n, 0)] as usize;
         states.push(Reverse(State {
+            f_score: right_cost + target_distance - n,
             cost: down_cost,
             position: (n, 0),
             direction: Direction::Down,
@@ -70,6 +74,7 @@ fn start_states(grid: &Grid<u8>) -> BinaryHeap<Reverse<State>> {
 impl State {
     fn next_states(&self, grid: &Grid<u8>) -> ArrayVec<Reverse<State>, 6> {
         let mut states = ArrayVec::new();
+        let target_distance = grid.cols() + grid.rows() - 2 - self.position.0 - self.position.1;
         match self.direction {
             Direction::Down | Direction::Up => {
                 let mut left_cost = self.cost;
@@ -79,6 +84,7 @@ impl State {
                         let position = (self.position.0, self.position.1 - n);
                         left_cost += grid[position] as usize;
                         states.push(Reverse(State {
+                            f_score: left_cost + target_distance + n,
                             cost: left_cost,
                             position,
                             direction: Direction::Left,
@@ -88,6 +94,7 @@ impl State {
                         let position = (self.position.0, self.position.1 + n);
                         right_cost += grid[position] as usize;
                         states.push(Reverse(State {
+                            f_score: right_cost + target_distance - n,
                             cost: right_cost,
                             position,
                             direction: Direction::Right,
@@ -103,6 +110,7 @@ impl State {
                         let position = (self.position.0 - n, self.position.1);
                         up_cost += grid[position] as usize;
                         states.push(Reverse(State {
+                            f_score: up_cost + target_distance + n,
                             cost: up_cost,
                             position,
                             direction: Direction::Up,
@@ -112,6 +120,7 @@ impl State {
                         let position = (self.position.0 + n, self.position.1);
                         down_cost += grid[position] as usize;
                         states.push(Reverse(State {
+                            f_score: down_cost + target_distance - n,
                             cost: down_cost,
                             position,
                             direction: Direction::Down,
