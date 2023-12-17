@@ -1,3 +1,4 @@
+use arrayvec::ArrayVec;
 use grid::Grid;
 use pathfinding::directed::dijkstra;
 
@@ -10,6 +11,7 @@ enum Node {
 
 const MIN_STEPS: usize = 4;
 const MAX_STEPS: usize = 10;
+const NEXT_STATES_MAX: usize = (MAX_STEPS - MIN_STEPS + 1) * 2;
 
 pub fn solve(input: &str) -> Option<usize> {
     let lines: Vec<&[u8]> = input.lines().map(str::as_bytes).collect();
@@ -23,7 +25,7 @@ pub fn solve(input: &str) -> Option<usize> {
     dijkstra::dijkstra(
         &Node::Start(0, 0),
         |&node| {
-            let mut states = vec![];
+            let mut states: ArrayVec<(Node, usize), NEXT_STATES_MAX> = ArrayVec::new();
             match node {
                 Node::Start(row, column) => {
                     let mut right_cost = right_cost(row, column, MIN_STEPS - 1, &grid);

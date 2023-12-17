@@ -1,3 +1,4 @@
+use arrayvec::ArrayVec;
 use grid::Grid;
 use pathfinding::directed::dijkstra;
 
@@ -22,7 +23,7 @@ pub fn solve(input: &str) -> Option<usize> {
     dijkstra::dijkstra(
         &Node::Start(0, 0),
         |&node| {
-            let mut states = vec![];
+            let mut states: ArrayVec<(Node, usize), 6> = ArrayVec::new();
             match node {
                 Node::Start(row, column) => {
                     let mut right_cost = 0;
