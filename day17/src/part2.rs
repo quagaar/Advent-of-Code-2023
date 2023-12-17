@@ -1,6 +1,6 @@
 use arrayvec::ArrayVec;
 use grid::Grid;
-use pathfinding::directed::dijkstra;
+use pathfinding::directed::astar;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Node {
@@ -21,8 +21,9 @@ pub fn solve(input: &str) -> Option<usize> {
         cols,
     );
     let target_location = (grid.rows() - 1, grid.cols() - 1);
+    let target_distance = target_location.0 + target_location.1;
 
-    dijkstra::dijkstra(
+    astar::astar(
         &Node::Start(0, 0),
         |&node| {
             let mut states: ArrayVec<(Node, usize), NEXT_STATES_MAX> = ArrayVec::new();
@@ -75,6 +76,11 @@ pub fn solve(input: &str) -> Option<usize> {
                 }
             }
             states
+        },
+        |&node| match node {
+            Node::Start(row, column) => target_distance - row - column,
+            Node::Horizontal((row, column)) => target_distance - row - column,
+            Node::Vertical((row, column)) => target_distance - row - column,
         },
         |&node| {
             node == Node::Horizontal(target_location) || node == Node::Vertical(target_location)
