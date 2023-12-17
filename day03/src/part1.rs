@@ -36,7 +36,7 @@ fn part1_validator<'a>(
 ) -> impl Fn(&Range<usize>) -> bool + 'a {
     |r| {
         let start = r.start.saturating_sub(1);
-        let end = (r.end + 1).clamp(0, cur.len());
+        let end = (r.end + 1).min(cur.len());
 
         has_symbol(prev.get(start..end))
             || has_symbol(next.get(start..end))

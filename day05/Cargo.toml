@@ -13,6 +13,7 @@ name = "day05"
 test = false
 
 [dependencies]
+arrayvec.workspace = true
 itertools = { workspace = true }
 rayon = { workspace = true }
 runner = { path = "../utils/runner" }

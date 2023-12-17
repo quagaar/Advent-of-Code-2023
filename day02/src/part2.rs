@@ -9,19 +9,22 @@ pub fn solve_part2(input: &str) -> usize {
 }
 
 fn get_cube_power(rounds: &str) -> usize {
-    let (red, green, blue) = rounds.split("; ").fold((0, 0, 0), |mut acc, round| {
-        round.split(", ").for_each(|cube| {
-            let (number, colour) = cube.split_once(' ').unwrap();
-            let number: usize = number.parse().unwrap();
-            match colour {
-                "red" => acc.0 = acc.0.max(number),
-                "green" => acc.1 = acc.1.max(number),
-                "blue" => acc.2 = acc.2.max(number),
-                _ => (),
-            }
-        });
-        acc
-    });
+    let (red, green, blue) =
+        rounds
+            .split("; ")
+            .fold((0, 0, 0), |(mut red, mut green, mut blue), round| {
+                round.split(", ").for_each(|cube| {
+                    let (number, colour) = cube.split_once(' ').unwrap();
+                    let number: usize = number.parse().unwrap();
+                    match colour {
+                        "red" => red = red.max(number),
+                        "green" => green = green.max(number),
+                        "blue" => blue = blue.max(number),
+                        _ => (),
+                    }
+                });
+                (red, green, blue)
+            });
     red * green * blue
 }
 

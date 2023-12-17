@@ -56,7 +56,7 @@ fn gear_ratio_calculator<'a>(
 ) -> impl Fn(usize) -> Option<usize> + 'a {
     |gear_pos| {
         let start = gear_pos.saturating_sub(MAX_DIGITS);
-        let end = (gear_pos + MAX_DIGITS + 1).clamp(0, cur.len());
+        let end = (gear_pos + MAX_DIGITS + 1).min(cur.len());
         let (count, ratio) = chain!(
             find_adjacent_numbers(&prev[start..end], gear_pos - start),
             find_adjacent_numbers(&cur[start..end], gear_pos - start),
