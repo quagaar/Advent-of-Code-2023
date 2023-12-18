@@ -41,18 +41,10 @@ impl Trench {
         let direction = line.chars().next().unwrap();
         let distance: u32 = line[2..].split_once(' ').unwrap().0.parse().unwrap();
         match direction {
-            'U' => {
-                position.y += distance as i32;
-            }
-            'D' => {
-                position.y -= distance as i32;
-            }
-            'L' => {
-                position.x -= distance as i32;
-            }
-            'R' => {
-                position.x += distance as i32;
-            }
+            'U' => position.y += distance as i32,
+            'D' => position.y -= distance as i32,
+            'L' => position.x -= distance as i32,
+            'R' => position.x += distance as i32,
             _ => panic!("Unknown direction: {}", direction),
         }
         Some(Self {

@@ -26,7 +26,7 @@
 | [Day 15](https://adventofcode.com/2023/day/15) |    _46.151 µs_ |    _184.90 µs_ |  _263.83 µs_ |  _706.56 µs_ |
 | [Day 16](https://adventofcode.com/2023/day/16) |    _980.18 µs_ |     28.094 ms  |   4.7677 ms  |   351.34 ms  |
 | [Day 17](https://adventofcode.com/2023/day/17) |     8.2554 ms  |     14.281 ms  |   54.821 ms  |   90.668 ms  |
-| [Day 18](https://adventofcode.com/2023/day/18) |    _13.089 µs_ |    _30.616 µs_ |  _83.272 µs_ |  _152.13 µs_  |
+| [Day 18](https://adventofcode.com/2023/day/18) |    _13.089 µs_ |    _30.616 µs_ |  _83.272 µs_ |  _152.13 µs_ |
 | [Day 19](https://adventofcode.com/2023/day/19) |                |                |              |              |
 | [Day 20](https://adventofcode.com/2023/day/20) |                |                |              |              |
 | [Day 21](https://adventofcode.com/2023/day/21) |                |                |              |              |

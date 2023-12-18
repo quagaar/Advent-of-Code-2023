@@ -42,18 +42,10 @@ impl Trench {
         let distance = u64::from_str_radix(&hex[0..5], 16).unwrap();
         let direction = hex.chars().nth(5).unwrap();
         match direction {
-            '3' => {
-                position.y += distance as i64;
-            }
-            '1' => {
-                position.y -= distance as i64;
-            }
-            '2' => {
-                position.x -= distance as i64;
-            }
-            '0' => {
-                position.x += distance as i64;
-            }
+            '3' => position.y += distance as i64,
+            '1' => position.y -= distance as i64,
+            '2' => position.x -= distance as i64,
+            '0' => position.x += distance as i64,
             _ => panic!("Unknown direction: {}", direction),
         }
         Some(Self {
