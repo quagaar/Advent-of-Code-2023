@@ -1,5 +1,4 @@
 use itertools::Itertools;
-use std::ops::Range;
 
 pub fn solve(input: &str) -> u32 {
     let trenches = input
@@ -7,62 +6,24 @@ pub fn solve(input: &str) -> u32 {
         .scan(Position { x: 0, y: 0 }, Trench::create)
         .collect::<Vec<_>>();
 
-    let (min_y, max_y) = trenches
+    // Use the shoelace algorithm to calculate the area of a polygon.
+    // The polygon lines go down the center of the trenches, so we have to
+    // add the half of area of the trenches plus one to correct for the
+    // width of the trenches.
+
+    let (perimeter, sum1, sum2) = trenches
         .iter()
-        .fold((0, 0), |(min_y, max_y), trench| match trench {
-            Trench::Up(_, y_range) => (min_y.min(y_range.start), max_y.max(y_range.end - 1)),
-            Trench::Down(_, y_range) => (min_y.min(y_range.start), max_y.max(y_range.end - 1)),
-            Trench::Left(y, _) => (min_y.min(*y), max_y.max(*y)),
-            Trench::Right(y, _) => (min_y.min(*y), max_y.max(*y)),
+        .cycle()
+        .tuple_windows()
+        .take(trenches.len())
+        .fold((0, 0, 0), |(perimeter, sum1, sum2), (current, next)| {
+            let perimeter = perimeter + current.length;
+            let sum1 = sum1 + current.end.x * next.end.y;
+            let sum2 = sum2 + current.end.y * next.end.x;
+            (perimeter, sum1, sum2)
         });
 
-    (min_y..=max_y)
-        .map(|y| {
-            trenches
-                .iter()
-                .enumerate()
-                .filter(|(_, trench)| match trench {
-                    Trench::Up(_, y_range) => y_range.contains(&y),
-                    Trench::Down(_, y_range) => y_range.contains(&y),
-                    Trench::Left(trench_y, _) => y == *trench_y,
-                    Trench::Right(trench_y, _) => y == *trench_y,
-                })
-                .sorted_by_key(|(_, trench)| match trench {
-                    Trench::Up(x, _) => *x,
-                    Trench::Down(x, _) => *x,
-                    Trench::Left(_, x_range) => x_range.start,
-                    Trench::Right(_, x_range) => x_range.start,
-                })
-                .fold((0, None), |(total, start_pos), (n, trench)| match trench {
-                    Trench::Up(x, _) => {
-                        let start = start_pos.unwrap_or(*x);
-                        (total, Some(start))
-                    }
-                    Trench::Down(x, _) => {
-                        let start = start_pos.expect("No start position");
-                        let total = total + start.abs_diff(*x) + 1;
-                        (total, None)
-                    }
-                    Trench::Left(_, x_range) => {
-                        let start = start_pos.unwrap_or(x_range.start);
-                        (total, Some(start))
-                    }
-                    Trench::Right(_, x_range) => {
-                        let start = start_pos.unwrap_or(x_range.start);
-                        let next = trenches.get(n + 1).unwrap_or(&trenches[0]);
-                        match next {
-                            Trench::Up(_, _) => (total, Some(start)),
-                            Trench::Down(_, _) => {
-                                let total = total + start.abs_diff(x_range.end);
-                                (total, None)
-                            }
-                            _ => panic!("Unexpected trench after right: {:?}", next),
-                        }
-                    }
-                })
-                .0
-        })
-        .sum()
+    1 + (sum1.abs_diff(sum2) + perimeter) / 2
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -72,40 +33,34 @@ struct Position {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum Trench {
-    Up(i32, Range<i32>),
-    Down(i32, Range<i32>),
-    Left(i32, Range<i32>),
-    Right(i32, Range<i32>),
+struct Trench {
+    end: Position,
+    length: u32,
 }
 
 impl Trench {
     fn create(position: &mut Position, line: &str) -> Option<Self> {
         let direction = line.chars().next().unwrap();
-        let distance: i32 = line[2..].split_once(' ').unwrap().0.parse().unwrap();
+        let distance: u32 = line[2..].split_once(' ').unwrap().0.parse().unwrap();
         match direction {
             'U' => {
-                let y_range = position.y + 1..position.y + distance + 1;
-                position.y += distance;
-                Some(Self::Up(position.x, y_range))
+                position.y += distance as i32;
             }
             'D' => {
-                let y_range = position.y - distance..position.y;
-                position.y -= distance;
-                Some(Self::Down(position.x, y_range))
+                position.y -= distance as i32;
             }
             'L' => {
-                let x_range = position.x - distance..position.x;
-                position.x -= distance;
-                Some(Self::Left(position.y, x_range))
+                position.x -= distance as i32;
             }
             'R' => {
-                let x_range = position.x + 1..position.x + distance + 1;
-                position.x += distance;
-                Some(Self::Right(position.y, x_range))
+                position.x += distance as i32;
             }
             _ => panic!("Unknown direction: {}", direction),
         }
+        Some(Self {
+            end: *position,
+            length: distance,
+        })
     }
 }
 
