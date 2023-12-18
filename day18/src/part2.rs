@@ -11,17 +11,15 @@ pub fn solve(input: &str) -> u64 {
     // add the half of area of the trenches plus one to correct for the
     // width of the trenches.
 
-    let (perimeter, sum1, sum2) = trenches
-        .iter()
-        .cycle()
-        .tuple_windows()
-        .take(trenches.len())
-        .fold((0, 0, 0), |(perimeter, sum1, sum2), (current, next)| {
+    let (perimeter, sum1, sum2) = trenches.iter().circular_tuple_windows().fold(
+        (0, 0, 0),
+        |(perimeter, sum1, sum2), (current, next)| {
             let perimeter = perimeter + current.length;
             let sum1 = sum1 + current.end.x * next.end.y;
             let sum2 = sum2 + current.end.y * next.end.x;
             (perimeter, sum1, sum2)
-        });
+        },
+    );
 
     1 + (sum1.abs_diff(sum2) + perimeter) / 2
 }
