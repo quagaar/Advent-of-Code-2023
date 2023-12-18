@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use std::{collections::BTreeSet, ops::Range};
+use std::ops::Range;
 
 pub fn solve(input: &str) -> u64 {
     let trenches = input
@@ -7,7 +7,7 @@ pub fn solve(input: &str) -> u64 {
         .scan(Position { x: 0, y: 0 }, Trench::create)
         .collect::<Vec<_>>();
 
-    let y_ranges: BTreeSet<i64> = trenches
+    let y_ranges: Vec<i64> = trenches
         .iter()
         .flat_map(|trench| match trench {
             Trench::Up(_, y_range) => [y_range.start, y_range.end],
@@ -15,12 +15,15 @@ pub fn solve(input: &str) -> u64 {
             Trench::Left(y, _) => [*y, *y + 1],
             Trench::Right(y, _) => [*y, *y + 1],
         })
+        .sorted_unstable()
+        .dedup()
         .collect();
 
     y_ranges
-        .into_iter()
-        .tuple_windows()
-        .map(|(y, next)| {
+        .windows(2)
+        .map(|window| {
+            let y = window[0];
+            let next = window[1];
             let repeat = (next - y) as u64;
             let total = trenches
                 .iter()
