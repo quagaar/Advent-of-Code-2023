@@ -1,3 +1,4 @@
+use crate::split_range::SplitRange;
 use std::{
     collections::{HashMap, VecDeque},
     ops::Range,
@@ -141,148 +142,60 @@ impl<'a> State<'a> {
         match *condition {
             Condition::None => (Some(self), None),
             Condition::XGreaterThan(value) => {
-                if self.x.start > value {
-                    (Some(self), None)
-                } else if self.x.end - 1 <= value {
-                    (None, Some(self))
-                } else {
-                    (
-                        Some(Self {
-                            x: value + 1..self.x.end,
-                            ..self.clone()
-                        }),
-                        Some(Self {
-                            x: self.x.start..value + 1,
-                            ..self
-                        }),
-                    )
-                }
+                let (lhs, rhs) = self.x.split(value + 1);
+                (
+                    rhs.map(|x| Self { x, ..self.clone() }),
+                    lhs.map(|x| Self { x, ..self }),
+                )
             }
             Condition::MGreaterThan(value) => {
-                if self.m.start > value {
-                    (Some(self), None)
-                } else if self.m.end - 1 <= value {
-                    (None, Some(self))
-                } else {
-                    (
-                        Some(Self {
-                            m: value + 1..self.m.end,
-                            ..self.clone()
-                        }),
-                        Some(Self {
-                            m: self.m.start..value + 1,
-                            ..self
-                        }),
-                    )
-                }
+                let (lhs, rhs) = self.m.split(value + 1);
+                (
+                    rhs.map(|m| Self { m, ..self.clone() }),
+                    lhs.map(|m| Self { m, ..self }),
+                )
             }
             Condition::AGreaterThan(value) => {
-                if self.a.start > value {
-                    (Some(self), None)
-                } else if self.a.end - 1 <= value {
-                    (None, Some(self))
-                } else {
-                    (
-                        Some(Self {
-                            a: value + 1..self.a.end,
-                            ..self.clone()
-                        }),
-                        Some(Self {
-                            a: self.a.start..value + 1,
-                            ..self
-                        }),
-                    )
-                }
+                let (lhs, rhs) = self.a.split(value + 1);
+                (
+                    rhs.map(|a| Self { a, ..self.clone() }),
+                    lhs.map(|a| Self { a, ..self }),
+                )
             }
             Condition::SGreaterThan(value) => {
-                if self.s.start > value {
-                    (Some(self), None)
-                } else if self.s.end - 1 <= value {
-                    (None, Some(self))
-                } else {
-                    (
-                        Some(Self {
-                            s: value + 1..self.s.end,
-                            ..self.clone()
-                        }),
-                        Some(Self {
-                            s: self.s.start..value + 1,
-                            ..self
-                        }),
-                    )
-                }
+                let (lhs, rhs) = self.s.split(value + 1);
+                (
+                    rhs.map(|s| Self { s, ..self.clone() }),
+                    lhs.map(|s| Self { s, ..self }),
+                )
             }
             Condition::XLessThan(value) => {
-                if self.x.start >= value {
-                    (None, Some(self))
-                } else if self.x.end <= value {
-                    (Some(self), None)
-                } else {
-                    (
-                        Some(Self {
-                            x: self.x.start..value,
-                            ..self.clone()
-                        }),
-                        Some(Self {
-                            x: value..self.x.end,
-                            ..self
-                        }),
-                    )
-                }
+                let (lhs, rhs) = self.x.split(value);
+                (
+                    lhs.map(|x| Self { x, ..self.clone() }),
+                    rhs.map(|x| Self { x, ..self }),
+                )
             }
             Condition::MLessThan(value) => {
-                if self.m.start >= value {
-                    (None, Some(self))
-                } else if self.m.end <= value {
-                    (Some(self), None)
-                } else {
-                    (
-                        Some(Self {
-                            m: self.m.start..value,
-                            ..self.clone()
-                        }),
-                        Some(Self {
-                            m: value..self.m.end,
-                            ..self
-                        }),
-                    )
-                }
+                let (lhs, rhs) = self.m.split(value);
+                (
+                    lhs.map(|m| Self { m, ..self.clone() }),
+                    rhs.map(|m| Self { m, ..self }),
+                )
             }
             Condition::ALessThan(value) => {
-                if self.a.start >= value {
-                    (None, Some(self))
-                } else if self.a.end <= value {
-                    (Some(self), None)
-                } else {
-                    (
-                        Some(Self {
-                            a: self.a.start..value,
-                            ..self.clone()
-                        }),
-                        Some(Self {
-                            a: value..self.a.end,
-                            ..self
-                        }),
-                    )
-                }
+                let (lhs, rhs) = self.a.split(value);
+                (
+                    lhs.map(|a| Self { a, ..self.clone() }),
+                    rhs.map(|a| Self { a, ..self }),
+                )
             }
             Condition::SLessThan(value) => {
-                if self.s.start >= value {
-                    (None, Some(self))
-                } else if self.s.end <= value {
-                    (Some(self), None)
-                } else {
-                    (
-                        Some(Self {
-                            s: self.s.start..value,
-                            ..self.clone()
-                        }),
-                        Some(Self {
-                            s: value..self.s.end,
-                            ..self
-                        }),
-                    )
-                }
+                let (lhs, rhs) = self.s.split(value);
+                (
+                    lhs.map(|s| Self { s, ..self.clone() }),
+                    rhs.map(|s| Self { s, ..self }),
+                )
             }
         }
     }
