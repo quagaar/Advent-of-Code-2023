@@ -1,4 +1,7 @@
-use std::collections::{HashMap, VecDeque};
+use std::{
+    cell::{Cell, RefCell},
+    collections::{HashMap, VecDeque},
+};
 
 pub fn solve(input: &str) -> usize {
     let mut modules = read_input(input);
@@ -27,9 +30,9 @@ fn read_input(input: &str) -> HashMap<&str, Module> {
     );
     modules
         .into_iter()
-        .map(|mut module| {
-            if let ModuleType::Conjunction(ref mut hashmap) = module.module_type {
-                hashmap.extend(
+        .map(|module| {
+            if let ModuleType::Conjunction(ref memory) = module.module_type {
+                memory.borrow_mut().extend(
                     sources
                         .get(module.name)
                         .unwrap()
@@ -58,41 +61,8 @@ fn run_cycle(modules: &mut HashMap<&str, Module>) -> (usize, usize) {
             low_count += 1
         }
 
-        if let Some(module) = modules.get_mut(pulse.destination) {
-            match &mut module.module_type {
-                ModuleType::Broadcaster => {
-                    for destination in &module.destinations {
-                        queue.push_back(Pulse {
-                            is_high: pulse.is_high,
-                            source: module.name,
-                            destination,
-                        })
-                    }
-                }
-                ModuleType::Conjunction(ref mut inputs) => {
-                    *inputs.get_mut(pulse.source).unwrap() = pulse.is_high;
-                    let is_high = !inputs.iter().all(|(_, x)| *x);
-                    for destination in &module.destinations {
-                        queue.push_back(Pulse {
-                            is_high,
-                            source: module.name,
-                            destination,
-                        })
-                    }
-                }
-                ModuleType::FlipFlop(ref mut is_on) => {
-                    if !pulse.is_high {
-                        *is_on = !*is_on;
-                        for destination in &module.destinations {
-                            queue.push_back(Pulse {
-                                is_high: *is_on,
-                                source: module.name,
-                                destination,
-                            })
-                        }
-                    }
-                }
-            }
+        if let Some(module) = modules.get(pulse.destination) {
+            queue.extend(module.process(pulse));
         }
     }
 
@@ -101,8 +71,8 @@ fn run_cycle(modules: &mut HashMap<&str, Module>) -> (usize, usize) {
 
 enum ModuleType<'a> {
     Broadcaster,
-    FlipFlop(bool),
-    Conjunction(HashMap<&'a str, bool>),
+    FlipFlop(Cell<bool>),
+    Conjunction(RefCell<HashMap<&'a str, bool>>),
 }
 
 struct Module<'a> {
@@ -118,12 +88,12 @@ impl<'a> Module<'a> {
         match name.chars().next() {
             Some('%') => Module {
                 name: &name[1..],
-                module_type: ModuleType::FlipFlop(false),
+                module_type: ModuleType::FlipFlop(Cell::new(false)),
                 destinations,
             },
             Some('&') => Module {
                 name: &name[1..],
-                module_type: ModuleType::Conjunction(HashMap::new()),
+                module_type: ModuleType::Conjunction(RefCell::new(HashMap::new())),
                 destinations,
             },
             _ if name == "broadcaster" => Module {
@@ -133,6 +103,32 @@ impl<'a> Module<'a> {
             },
             _ => panic!("Unknown module type: {}", line),
         }
+    }
+
+    fn process(&self, pulse: Pulse) -> impl Iterator<Item = Pulse> {
+        let next_pulse = match &self.module_type {
+            ModuleType::Broadcaster => Some(pulse.is_high),
+            ModuleType::Conjunction(memory) => {
+                *memory.borrow_mut().get_mut(pulse.source).unwrap() = pulse.is_high;
+                Some(!memory.borrow().iter().all(|(_, x)| *x))
+            }
+            ModuleType::FlipFlop(state) => {
+                if !pulse.is_high {
+                    state.set(!state.get());
+                    Some(state.get())
+                } else {
+                    None
+                }
+            }
+        };
+        let source = self.name;
+        self.destinations.iter().filter_map(move |destination| {
+            next_pulse.map(|is_high| Pulse {
+                is_high,
+                source,
+                destination,
+            })
+        })
     }
 }
 
