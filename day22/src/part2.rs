@@ -1,15 +1,23 @@
-use indicatif::ProgressIterator;
+use rayon::prelude::*;
 use std::{collections::HashSet, ops::Range};
 
 pub fn solve(input: &str) -> usize {
-    let mut stack = input.lines().map(Brick::parse).collect::<Vec<_>>();
+    let mut stack = input
+        .lines()
+        .enumerate()
+        .map(|(n, line)| Brick::parse(line, n))
+        .collect::<Vec<_>>();
 
     settle_stack(&mut stack);
 
-    stack
+    let graph = stack
         .iter()
-        .progress()
-        .map(|brick| brick.chain_reaction_count(&stack))
+        .map(|brick| (brick.id, brick.get_supporters(&stack)))
+        .collect::<Vec<_>>();
+
+    stack
+        .par_iter()
+        .map(|brick| brick.chain_reaction_count(&graph))
         .sum()
 }
 
@@ -34,43 +42,54 @@ fn settle_stack(stack: &mut Vec<Brick>) {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Brick {
+    id: usize,
     x: Range<usize>,
     y: Range<usize>,
     z: Range<usize>,
 }
 
 impl Brick {
-    fn parse(line: &str) -> Self {
+    fn parse(line: &str, id: usize) -> Self {
         let (lhs, rhs) = line.split_once('~').unwrap();
         let lhs = lhs.split(',').map(|s| s.parse::<usize>().unwrap());
         let rhs = rhs.split(',').map(|s| s.parse::<usize>().unwrap());
         let mut ranges = lhs.zip(rhs).map(|(a, b)| a.min(b)..a.max(b) + 1);
         Self {
+            id,
             x: ranges.next().unwrap(),
             y: ranges.next().unwrap(),
             z: ranges.next().unwrap(),
         }
     }
 
-    fn chain_reaction_count(&self, stack: &[Brick]) -> usize {
-        stack
+    /// Returns the number of bricks that would fall if this brick was removed.
+    fn chain_reaction_count(&self, graph: &[(usize, Vec<usize>)]) -> usize {
+        graph
             .iter()
-            .filter(|brick| brick.z.start > 1)
-            .fold(HashSet::from([self]), |mut removed, brick| {
-                if !brick.is_supported(stack, &removed) {
-                    removed.insert(brick);
-                }
-                removed
-            })
+            .filter(|(_, supporters)| !supporters.is_empty())
+            .fold(
+                HashSet::from([self.id]),
+                |mut removed, (brick, supporters)| {
+                    if supporters
+                        .iter()
+                        .all(|supporter| removed.contains(supporter))
+                    {
+                        removed.insert(*brick);
+                    }
+                    removed
+                },
+            )
             .len()
             - 1
     }
 
-    fn is_supported(&self, stack: &[Brick], removed: &HashSet<&Brick>) -> bool {
+    /// Returns ids of all bricks that are supporting this brick.
+    fn get_supporters(&self, stack: &[Brick]) -> Vec<usize> {
         stack
             .iter()
-            .filter(|other| !removed.contains(other))
-            .any(|other| other.is_supporting(self))
+            .filter(|other| other.is_supporting(self))
+            .map(|other| other.id)
+            .collect()
     }
 
     /// Returns `true` if this brick is supporting the other brick.

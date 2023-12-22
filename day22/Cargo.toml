@@ -13,7 +13,7 @@ name = "day22"
 test = false
 
 [dependencies]
-indicatif.workspace = true
+rayon.workspace = true
 runner = { path = "../utils/runner" }
 
 [dev-dependencies]
