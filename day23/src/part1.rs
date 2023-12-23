@@ -15,16 +15,20 @@ pub fn solve(input: &str) -> usize {
     let graph = build_graph(&grid, start, target);
 
     #[cfg(debug_assertions)]
-    print_graph(&graph);
+    print_graph(&graph, grid.cols());
 
-    longest_path(&graph, start, target)
+    longest_path(
+        &graph,
+        NodeId::from(start, grid.cols()),
+        NodeId::from(target, grid.cols()),
+    )
 }
 
 #[allow(dead_code)]
-fn print_graph(graph: &Graph) {
+fn print_graph(graph: &Graph, cols: usize) {
     for (node, edges) in graph {
-        let row = node.row;
-        let col = node.col;
+        let row = node.row(cols);
+        let col = node.col(cols);
         print!("Node({row},{col}) => [");
         let edge_str = edges
             .iter()
@@ -32,8 +36,8 @@ fn print_graph(graph: &Graph) {
                 format!(
                     "{length} -> ({row},{col})",
                     length = edge.length,
-                    row = edge.to.row,
-                    col = edge.to.col
+                    row = edge.to.row(cols),
+                    col = edge.to.col(cols)
                 )
             })
             .join(", ");
@@ -42,12 +46,12 @@ fn print_graph(graph: &Graph) {
 }
 
 struct State {
-    position: Node,
+    position: NodeId,
     distance: usize,
-    visited: HashSet<Node>,
+    visited: HashSet<NodeId>,
 }
 
-fn longest_path(graph: &Graph, start: Node, target: Node) -> usize {
+fn longest_path(graph: &Graph, start: NodeId, target: NodeId) -> usize {
     let mut queue = VecDeque::from([State {
         position: start,
         distance: 0,
@@ -86,12 +90,29 @@ struct Node {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct Edge {
-    length: usize,
-    to: Node,
+struct NodeId(u16);
+
+impl NodeId {
+    fn from(node: Node, cols: usize) -> Self {
+        Self((node.row * cols + node.col) as u16)
+    }
+
+    fn row(&self, cols: usize) -> usize {
+        self.0 as usize / cols
+    }
+
+    fn col(&self, cols: usize) -> usize {
+        self.0 as usize % cols
+    }
 }
 
-type Graph = HashMap<Node, Vec<Edge>>;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct Edge {
+    length: usize,
+    to: NodeId,
+}
+
+type Graph = HashMap<NodeId, Vec<Edge>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Direction {
@@ -140,10 +161,13 @@ fn build_graph(grid: &Grid<u8>, start: Node, target: Node) -> Graph {
                     }
                     [None, None, None, None] if position != target => break,
                     next => {
-                        graph.entry(node).or_default().push(Edge {
-                            length,
-                            to: position,
-                        });
+                        graph
+                            .entry(NodeId::from(node, grid.cols()))
+                            .or_default()
+                            .push(Edge {
+                                length,
+                                to: NodeId::from(position, grid.cols()),
+                            });
                         if position != target {
                             if let Some(_up) = next[0] {
                                 queue.push_back((position, Direction::Up));
