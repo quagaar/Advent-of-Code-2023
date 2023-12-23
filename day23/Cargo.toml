@@ -13,9 +13,7 @@ name = "day23"
 test = false
 
 [dependencies]
-arrayvec.workspace = true
 grid.workspace = true
-indicatif.workspace = true
 itertools.workspace = true
 rayon.workspace = true
 runner = { path = "../utils/runner" }

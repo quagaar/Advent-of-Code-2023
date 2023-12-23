@@ -1,5 +1,6 @@
 use grid::Grid;
 use itertools::Itertools;
+use rayon::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 pub fn solve(input: &str) -> usize {
@@ -47,33 +48,52 @@ struct State {
     visited: HashSet<Node>,
 }
 
+impl State {
+    fn after(&self, edge: &Edge) -> Self {
+        let mut visited = self.visited.clone();
+        visited.insert(edge.to);
+        Self {
+            position: edge.to,
+            distance: self.distance + edge.length,
+            visited,
+        }
+    }
+}
+
 fn longest_path(graph: &Graph, start: Node, target: Node) -> usize {
-    let mut queue = VecDeque::from([State {
+    let mut queue = vec![State {
         position: start,
         distance: 0,
         visited: HashSet::new(),
-    }]);
+    }];
     let mut max_distance = 0;
 
-    while let Some(state) = queue.pop_front() {
-        if state.position == target {
-            max_distance = max_distance.max(state.distance);
-        } else if let Some(edges) = graph.get(&state.position) {
-            for edge in edges {
-                if !state.visited.contains(&edge.to) {
-                    queue.push_back(State {
-                        position: edge.to,
-                        distance: state.distance + edge.length,
-                        visited: state
-                            .visited
-                            .iter()
-                            .chain([edge.to].iter())
-                            .copied()
-                            .collect(),
-                    });
+    while !queue.is_empty() {
+        let (max, next) = queue
+            .into_par_iter()
+            .map(|state| {
+                if state.position == target {
+                    (state.distance, Vec::new())
+                } else if let Some(edges) = graph.get(&state.position) {
+                    let next = edges
+                        .iter()
+                        .filter(|edge| !state.visited.contains(&edge.to))
+                        .map(|edge| state.after(edge))
+                        .collect();
+                    (0, next)
+                } else {
+                    (0, Vec::new())
                 }
-            }
-        }
+            })
+            .reduce(
+                || (0, Vec::new()),
+                |mut lhs, mut rhs| {
+                    lhs.1.append(&mut rhs.1);
+                    (lhs.0.max(rhs.0), lhs.1)
+                },
+            );
+        max_distance = max_distance.max(max);
+        queue = next;
     }
 
     max_distance
@@ -274,9 +294,8 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "not done yet"]
     fn result() {
         let result = solve(INPUT);
-        assert_eq!(result, 42);
+        assert_eq!(result, 6518);
     }
 }
