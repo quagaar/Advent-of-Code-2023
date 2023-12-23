@@ -20,7 +20,6 @@ runner = { path = "../utils/runner" }
 
 [dev-dependencies]
 criterion = { workspace = true }
-bencher = { path = "../utils/bencher" }
 
 [[bench]]
 name = "benchmark"
