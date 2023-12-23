@@ -1,5 +1,4 @@
 use grid::Grid;
-use itertools::Itertools;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 pub fn solve(input: &str) -> usize {
@@ -31,23 +30,28 @@ pub fn solve(input: &str) -> usize {
 
 #[allow(dead_code)]
 fn print_graph(graph: &Graph, cols: usize) {
+    println!("digraph {{");
     for (node, edges) in graph {
+        let node_idx = graph.iter().position(|(n, _)| n == node).unwrap();
         let row = node.row(cols);
         let col = node.col(cols);
-        print!("Node({row},{col}) => [");
-        let edge_str = edges
-            .iter()
-            .map(|edge| {
-                format!(
-                    "{length} -> ({row},{col})",
-                    length = edge.length,
-                    row = edge.to.row(cols),
-                    col = edge.to.col(cols)
-                )
-            })
-            .join(", ");
-        println!("{edge_str}]");
+        if row == 0 && col == 1 {
+            println!("   node{node_idx} [label=\"start\" style=filled]");
+        } else {
+            println!("   node{node_idx} [label=\"{row},{col}\"]");
+        }
+
+        for edge in edges {
+            let length = edge.length;
+            if let Some(target_idx) = graph.iter().position(|(n, _)| n == &edge.to) {
+                println!("   node{node_idx} -> node{target_idx} [label={length}]");
+            } else {
+                println!("   node{node_idx} -> target [label={length}]");
+            }
+        }
     }
+    println!("   target [style=filled]");
+    println!("}}");
 }
 
 fn longest_path(
