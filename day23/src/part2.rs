@@ -1,6 +1,5 @@
 use grid::Grid;
 use itertools::Itertools;
-use rayon::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 pub fn solve(input: &str) -> usize {
@@ -18,11 +17,16 @@ pub fn solve(input: &str) -> usize {
     #[cfg(debug_assertions)]
     print_graph(&graph, grid.cols());
 
+    let mut visited = vec![NodeId::from(start, grid.cols())];
+
     longest_path(
-        &graph,
         NodeId::from(start, grid.cols()),
+        0,
+        &graph,
         NodeId::from(target, grid.cols()),
+        &mut visited,
     )
+    .unwrap()
 }
 
 #[allow(dead_code)]
@@ -46,61 +50,31 @@ fn print_graph(graph: &Graph, cols: usize) {
     }
 }
 
-struct State {
-    position: NodeId,
+fn longest_path(
+    node: NodeId,
     distance: usize,
-    visited: HashSet<NodeId>,
-}
-
-impl State {
-    fn after(&self, edge: &Edge) -> Self {
-        let mut visited = self.visited.clone();
-        visited.insert(edge.to);
-        Self {
-            position: edge.to,
-            distance: self.distance + edge.length,
-            visited,
-        }
-    }
-}
-
-fn longest_path(graph: &Graph, start: NodeId, target: NodeId) -> usize {
-    let mut queue = vec![State {
-        position: start,
-        distance: 0,
-        visited: HashSet::new(),
-    }];
-    let mut max_distance = 0;
-
-    while !queue.is_empty() {
-        let (max, next) = queue
-            .into_par_iter()
-            .map(|state| {
-                if state.position == target {
-                    (state.distance, Vec::new())
-                } else if let Some(edges) = graph.get(&state.position) {
-                    let next = edges
-                        .iter()
-                        .filter(|edge| !state.visited.contains(&edge.to))
-                        .map(|edge| state.after(edge))
-                        .collect();
-                    (0, next)
+    graph: &Graph,
+    target: NodeId,
+    visited: &mut Vec<NodeId>,
+) -> Option<usize> {
+    graph.get(&node).and_then(|edges| {
+        edges
+            .iter()
+            .filter_map(|edge| {
+                if edge.to == target {
+                    Some(distance + edge.length)
+                } else if visited.contains(&edge.to) {
+                    None
                 } else {
-                    (0, Vec::new())
+                    visited.push(edge.to);
+                    let result =
+                        longest_path(edge.to, distance + edge.length, graph, target, visited);
+                    visited.pop();
+                    result
                 }
             })
-            .reduce(
-                || (0, Vec::new()),
-                |mut lhs, mut rhs| {
-                    lhs.1.append(&mut rhs.1);
-                    (lhs.0.max(rhs.0), lhs.1)
-                },
-            );
-        max_distance = max_distance.max(max);
-        queue = next;
-    }
-
-    max_distance
+            .max()
+    })
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

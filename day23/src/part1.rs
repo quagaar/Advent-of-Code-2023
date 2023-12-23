@@ -17,11 +17,16 @@ pub fn solve(input: &str) -> usize {
     #[cfg(debug_assertions)]
     print_graph(&graph, grid.cols());
 
+    let mut visited = vec![NodeId::from(start, grid.cols())];
+
     longest_path(
-        &graph,
         NodeId::from(start, grid.cols()),
+        0,
+        &graph,
         NodeId::from(target, grid.cols()),
+        &mut visited,
     )
+    .unwrap()
 }
 
 #[allow(dead_code)]
@@ -45,42 +50,31 @@ fn print_graph(graph: &Graph, cols: usize) {
     }
 }
 
-struct State {
-    position: NodeId,
+fn longest_path(
+    node: NodeId,
     distance: usize,
-    visited: HashSet<NodeId>,
-}
-
-fn longest_path(graph: &Graph, start: NodeId, target: NodeId) -> usize {
-    let mut queue = VecDeque::from([State {
-        position: start,
-        distance: 0,
-        visited: HashSet::new(),
-    }]);
-    let mut max_distance = 0;
-
-    while let Some(state) = queue.pop_front() {
-        if state.position == target {
-            max_distance = max_distance.max(state.distance);
-        } else if let Some(edges) = graph.get(&state.position) {
-            for edge in edges {
-                if !state.visited.contains(&edge.to) {
-                    queue.push_back(State {
-                        position: edge.to,
-                        distance: state.distance + edge.length,
-                        visited: state
-                            .visited
-                            .iter()
-                            .chain([edge.to].iter())
-                            .copied()
-                            .collect(),
-                    });
+    graph: &Graph,
+    target: NodeId,
+    visited: &mut Vec<NodeId>,
+) -> Option<usize> {
+    graph.get(&node).and_then(|edges| {
+        edges
+            .iter()
+            .filter_map(|edge| {
+                if edge.to == target {
+                    Some(distance + edge.length)
+                } else if visited.contains(&edge.to) {
+                    None
+                } else {
+                    visited.push(edge.to);
+                    let result =
+                        longest_path(edge.to, distance + edge.length, graph, target, visited);
+                    visited.pop();
+                    result
                 }
-            }
-        }
-    }
-
-    max_distance
+            })
+            .max()
+    })
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
