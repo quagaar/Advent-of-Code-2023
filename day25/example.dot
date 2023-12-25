@@ -1,0 +1,15 @@
+graph {
+   nvd -- {lhk}
+   lsr -- {lhk}
+   qnr -- {nvd}
+   rzs -- {qnr cmg lsr rsh}
+   frs -- {qnr lhk lsr}
+   cmg -- {qnr nvd lhk bvb}
+   ntq -- {jqt hfx bvb xhk}
+   jqt -- {rhn xhk nvd}
+   rsh -- {frs pzl lsr}
+   xhk -- {hfx}
+   rhn -- {xhk bvb hfx}
+   bvb -- {xhk hfx}
+   pzl -- {lsr hfx nvd}
+}
