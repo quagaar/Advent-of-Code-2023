@@ -14,6 +14,7 @@ test = false
 
 [dependencies]
 indicatif = { workspace = true, features = ["rayon"] }
+itertools.workspace = true
 pathfinding.workspace = true
 rayon.workspace = true
 runner = { path = "../utils/runner" }

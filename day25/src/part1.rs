@@ -1,7 +1,8 @@
 use indicatif::ParallelProgressIterator;
+use itertools::Itertools;
 use pathfinding::prelude::components;
 use rayon::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 pub fn solve(input: &str) -> usize {
     let graph: Vec<(&str, &str)> = input
@@ -17,6 +18,16 @@ pub fn solve(input: &str) -> usize {
     #[cfg(debug_assertions)]
     print_graph(&graph);
 
+    let candidates: Vec<(&str, &str)> = graph
+        .par_iter()
+        .map(|edge| (detour_length(edge, &graph), edge))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .sorted_by_key(|(length, _)| *length)
+        .rev()
+        .map(|(_, edge)| *edge)
+        .collect();
+
     let count = graph.len() * graph.len() * graph.len() / 6;
 
     (0..graph.len() - 2)
@@ -25,7 +36,7 @@ pub fn solve(input: &str) -> usize {
         .par_bridge()
         .progress_count(count as u64)
         .filter_map(|(a, b, c)| {
-            let groups = graph
+            let groups = candidates
                 .iter()
                 .enumerate()
                 .filter(|(i, _)| *i != a && *i != b && *i != c)
@@ -51,6 +62,34 @@ pub fn solve(input: &str) -> usize {
         })
         .find_any(|_| true)
         .unwrap()
+}
+
+// Number of edges in the shortest path between two nodes that does not include the direct edge
+fn detour_length(edge: &(&str, &str), graph: &[(&str, &str)]) -> usize {
+    let mut queue = VecDeque::from(vec![(edge.0, 0)]);
+    let mut visited = HashSet::new();
+
+    while let Some((node, distance)) = queue.pop_front() {
+        if visited.insert(node) {
+            let next = graph.iter().filter(|x| *x != edge).filter_map(|(l, r)| {
+                if *l == node {
+                    Some(r)
+                } else if *r == node {
+                    Some(l)
+                } else {
+                    None
+                }
+            });
+            for node in next {
+                if *node == edge.1 {
+                    return distance + 1;
+                }
+                queue.push_back((node, distance + 1));
+            }
+        }
+    }
+
+    0
 }
 
 #[allow(dead_code)]
