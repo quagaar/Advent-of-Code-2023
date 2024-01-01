@@ -1,32 +1,110 @@
 use itertools::Itertools;
+use num::{bigint::ToBigInt, BigInt};
+use num::{Integer, ToPrimitive};
+use num_traits::{One, Zero};
 
-pub fn solve(input: &str) -> usize {
-    count_collisions(input, 200000000000000.0, 400000000000000.0)
+pub fn solve(input: &str) -> i64 {
+    let hailstones = input.lines().map(Hailstone::parse).collect::<Vec<_>>();
+
+    let xy = solve_equations(
+        4,
+        &mut hailstones.iter().tuple_combinations().map(|(h1, h2)| {
+            vec![
+                (h2.vy - h1.vy).to_bigint().unwrap(),
+                (h1.py - h2.py).to_bigint().unwrap(),
+                (h1.vx - h2.vx).to_bigint().unwrap(),
+                (h2.px - h1.px).to_bigint().unwrap(),
+                (h2.px * h2.vy - h2.py * h2.vx - h1.px * h1.vy + h1.py * h1.vx)
+                    .to_bigint()
+                    .unwrap(),
+            ]
+        }),
+    );
+
+    let px = &xy[0];
+    let vx = &xy[1];
+    let py = &xy[2];
+    let _vy = &xy[3];
+
+    let xz = solve_equations(
+        4,
+        &mut hailstones.iter().tuple_combinations().map(|(h1, h2)| {
+            vec![
+                (h2.vz - h1.vz).to_bigint().unwrap(),
+                (h1.pz - h2.pz).to_bigint().unwrap(),
+                (h1.vx - h2.vx).to_bigint().unwrap(),
+                (h2.px - h1.px).to_bigint().unwrap(),
+                (h2.px * h2.vz - h2.pz * h2.vx - h1.px * h1.vz + h1.pz * h1.vx)
+                    .to_bigint()
+                    .unwrap(),
+            ]
+        }),
+    );
+
+    debug_assert!(xz[0] == *px);
+    debug_assert!(xz[1] == *vx);
+    let pz = &xz[2];
+    let _vz = &xz[3];
+
+    (px + py + pz).to_i64().unwrap()
 }
 
-fn count_collisions(input: &str, min: f64, max: f64) -> usize {
-    input
-        .lines()
-        .map(Hailstone::parse)
-        .map(IntersectionCalculator::new)
-        .collect::<Vec<_>>()
-        .into_iter()
-        .tuple_combinations()
-        .filter_map(|(a, b)| {
-            a.intersection(&b)
-                .filter(|intersection| a.hailstone.is_in_future(*intersection))
-                .filter(|intersection| b.hailstone.is_in_future(*intersection))
-        })
-        .filter(|(x, y)| *x >= min && *x <= max && *y >= min && *y <= max)
-        .count()
+fn solve_equations(unknowns: usize, eqs: &mut dyn Iterator<Item = Vec<BigInt>>) -> Vec<BigInt> {
+    if unknowns == 1 {
+        let x = eqs.next().unwrap();
+        debug_assert!(x.len() == 2);
+        debug_assert!(&x[1] % &x[0] == Zero::zero());
+        vec![&x[1] / &x[0]]
+    } else {
+        let mut eqs = eqs.filter(|x| x[0] != Zero::zero()).peekable();
+        let first = eqs.peek().unwrap().clone();
+        let mut next = eqs
+            .tuple_windows()
+            .map(|(a, b)| {
+                let gcd = a[0].gcd(&b[0]);
+                let ma = &b[0] / &gcd;
+                let mb = -&a[0] / gcd;
+                let mut res = vec![Zero::zero(); unknowns];
+                for i in 0..unknowns {
+                    res[i] = &a[i + 1] * &ma + &b[i + 1] * &mb;
+                }
+                let gcd = res
+                    .iter()
+                    .fold(None, |acc, x| {
+                        if let Some(y) = acc {
+                            Some(x.gcd(&y))
+                        } else {
+                            Some(x.clone())
+                        }
+                    })
+                    .unwrap();
+                if gcd > One::one() {
+                    res.iter_mut().for_each(|x| *x /= &gcd);
+                }
+                res
+            })
+            .filter(|x| x.iter().take(unknowns - 1).all(|x| *x != Zero::zero()));
+        let mut result = solve_equations(unknowns - 1, &mut next);
+        let x = first.last().unwrap()
+            - first[1..]
+                .iter()
+                .zip(result.iter())
+                .map(|(a, b)| a * b)
+                .sum::<BigInt>();
+        debug_assert!(&x % &first[0] == Zero::zero());
+        result.insert(0, x / &first[0]);
+        result
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
 struct Hailstone {
     px: i64,
     py: i64,
+    pz: i64,
     vx: i64,
     vy: i64,
+    vz: i64,
 }
 
 impl Hailstone {
@@ -35,50 +113,19 @@ impl Hailstone {
         let mut position = position.split(',').map(str::trim).map(str::parse);
         let px = position.next().unwrap().unwrap();
         let py = position.next().unwrap().unwrap();
+        let pz = position.next().unwrap().unwrap();
         let mut velocity = velocity.split(',').map(str::trim).map(str::parse);
         let vx = velocity.next().unwrap().unwrap();
         let vy = velocity.next().unwrap().unwrap();
-        Self { px, py, vx, vy }
-    }
-
-    fn is_in_future(&self, intersection: (f64, f64)) -> bool {
-        let (x, _y) = intersection;
-        if self.vx < 0 {
-            (self.px as f64) > x
-        } else {
-            (self.px as f64) < x
+        let vz = velocity.next().unwrap().unwrap();
+        Self {
+            px,
+            py,
+            pz,
+            vx,
+            vy,
+            vz,
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct IntersectionCalculator {
-    hailstone: Hailstone,
-    // (x - x') = (px - (px + vx)) = -vx
-    a: f64,
-    // (y - y') = (py - (py + vy)) = -vy
-    b: f64,
-    // (x*y' - y*x') = px*vy - py*vx
-    c: f64,
-}
-
-impl IntersectionCalculator {
-    fn new(hailstone: Hailstone) -> Self {
-        let a = hailstone.vx as f64 * -1.0;
-        let b = hailstone.vy as f64 * -1.0;
-        let c =
-            hailstone.px as f64 * hailstone.vy as f64 - hailstone.py as f64 * hailstone.vx as f64;
-        Self { hailstone, a, b, c }
-    }
-
-    fn intersection(&self, other: &Self) -> Option<(f64, f64)> {
-        let det = self.a * other.b - other.a * self.b;
-        if det == 0.0 {
-            return None;
-        }
-        let x = (self.c * other.a - self.a * other.c) / det;
-        let y = (self.c * other.b - self.b * other.c) / det;
-        Some((x, y))
     }
 }
 
@@ -91,14 +138,13 @@ mod tests {
 
     #[test]
     fn example() {
-        let result = count_collisions(EXAMPLE, 7.0, 27.0);
-        assert_eq!(result, 2);
+        let result = solve(EXAMPLE);
+        assert_eq!(result, 47);
     }
 
     #[test]
-    #[ignore = "not done yet"]
     fn result() {
         let result = solve(INPUT);
-        assert_eq!(result, 42);
+        assert_eq!(result, 546494494317645);
     }
 }
