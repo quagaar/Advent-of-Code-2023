@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use num::{bigint::ToBigInt, BigInt};
 use num::{Integer, ToPrimitive};
-use num_traits::{One, Zero};
+use num_traits::Zero;
 
 pub fn solve(input: &str) -> i64 {
     let hailstones = input.lines().map(Hailstone::parse).collect::<Vec<_>>();
@@ -50,41 +50,33 @@ pub fn solve(input: &str) -> i64 {
 }
 
 fn solve_equations(unknowns: usize, eqs: &mut dyn Iterator<Item = Vec<BigInt>>) -> Vec<BigInt> {
+    // Skip any rows with a zero coefficient value (they would break the algorithm)
+    let mut eqs = eqs
+        .filter(|x| x.iter().take(unknowns).all(|x| *x != Zero::zero()))
+        .peekable();
     if unknowns == 1 {
+        // Base case when only one unknown remains
         let x = eqs.next().unwrap();
         debug_assert!(x.len() == 2);
         debug_assert!(&x[1] % &x[0] == Zero::zero());
         vec![&x[1] / &x[0]]
     } else {
-        let mut eqs = eqs.filter(|x| x[0] != Zero::zero()).peekable();
+        // Copy one row to use later
         let first = eqs.peek().unwrap().clone();
-        let mut next = eqs
-            .tuple_windows()
-            .map(|(a, b)| {
-                let gcd = a[0].gcd(&b[0]);
-                let ma = &b[0] / &gcd;
-                let mb = -&a[0] / gcd;
-                let mut res = vec![Zero::zero(); unknowns];
-                for i in 0..unknowns {
-                    res[i] = &a[i + 1] * &ma + &b[i + 1] * &mb;
-                }
-                let gcd = res
-                    .iter()
-                    .fold(None, |acc, x| {
-                        if let Some(y) = acc {
-                            Some(x.gcd(&y))
-                        } else {
-                            Some(x.clone())
-                        }
-                    })
-                    .unwrap();
-                if gcd > One::one() {
-                    res.iter_mut().for_each(|x| *x /= &gcd);
-                }
-                res
-            })
-            .filter(|x| x.iter().take(unknowns - 1).all(|x| *x != Zero::zero()));
+        // Factor out the first unknown from each row
+        let mut next = eqs.tuple_windows().map(|(a, b)| {
+            let gcd = a[0].gcd(&b[0]);
+            let ma = &b[0] / &gcd;
+            let mb = -&a[0] / gcd;
+            a.into_iter()
+                .zip(b)
+                .skip(1)
+                .map(|(a, b)| a * &ma + b * &mb)
+                .collect()
+        });
+        // Solve for the remaining unknowns
         let mut result = solve_equations(unknowns - 1, &mut next);
+        // Solve for the first unknown
         let x = first.last().unwrap()
             - first[1..]
                 .iter()
