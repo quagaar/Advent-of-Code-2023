@@ -1,6 +1,7 @@
 use itertools::Itertools;
-use num::{bigint::ToBigInt, BigInt};
-use num::{Integer, ToPrimitive};
+use num::bigint::ToBigInt;
+use num::BigInt;
+use num::ToPrimitive;
 use num_traits::Zero;
 
 pub fn solve(input: &str) -> i64 {
@@ -65,13 +66,12 @@ fn solve_equations(unknowns: usize, eqs: &mut dyn Iterator<Item = Vec<BigInt>>) 
         let first = eqs.peek().unwrap().clone();
         // Factor out the first unknown from each row
         let mut next = eqs.tuple_windows().map(|(a, b)| {
-            let gcd = a[0].gcd(&b[0]);
-            let ma = &b[0] / &gcd;
-            let mb = -&a[0] / gcd;
+            let ma = b[0].clone();
+            let mb = a[0].clone();
             a.into_iter()
                 .zip(b)
                 .skip(1)
-                .map(|(a, b)| a * &ma + b * &mb)
+                .map(|(a, b)| a * &ma - b * &mb)
                 .collect()
         });
         // Solve for the remaining unknowns
