@@ -17,62 +17,62 @@ fn process_line(line: &str) -> usize {
         .fold(initial_states(pattern.as_str()), |acc, group_size| {
             acc.into_iter()
                 .filter(|(start_pos, _)| is_valid_group(&pattern[*start_pos..], group_size))
-                .map(|(start_pos, count)| (start_pos + group_size, count))
-                .flat_map(|(pos, count)| {
-                    after_hashes_positions(&pattern[pos..]).map(move |offset| (pos + offset, count))
-                })
-                .fold(HashMap::new(), |mut acc, (pos, count)| {
-                    acc.entry(pos)
-                        .and_modify(|total| *total += count)
-                        .or_insert(count);
+                .fold(HashMap::new(), |mut acc, (start_pos, count)| {
+                    let pos = start_pos + group_size;
+                    after_hashes_positions(&pattern[pos..]).for_each(|offset| {
+                        acc.entry(pos + offset)
+                            .and_modify(|total| *total += count)
+                            .or_insert(count);
+                    });
                     acc
                 })
         })
-        .into_iter()
-        .filter(|(pos, _)| *pos == pattern.len())
-        .map(|(_, count)| count)
-        .sum()
+        .get(&pattern.len())
+        .copied()
+        .unwrap_or(0)
 }
 
+/// Get the initial states to consider for the start of the first group.
 fn initial_states(pattern: &str) -> HashMap<usize, usize> {
-    (0..pattern.len())
-        .take_while(|n| *n == 0 || pattern.chars().nth(n - 1) != Some('#'))
-        .map(|n| (n, 1))
-        .collect()
+    if let Some(pos) = pattern.chars().position(|c| c == '#') {
+        pattern
+            .chars()
+            .take(pos + 1)
+            .enumerate()
+            .map(|(n, _)| (n, 1))
+            .collect()
+    } else {
+        pattern.chars().enumerate().map(|(n, _)| (n, 1)).collect()
+    }
 }
 
+/// Check if a valid group of given size can fit at the start of the substring.
 fn is_valid_group(substring: &str, group_size: usize) -> bool {
-    (0..group_size).all(|n| matches!(substring.chars().nth(n), Some('#') | Some('?')))
-        && substring.chars().nth(group_size) != Some('#')
+    let mut chars = substring.chars();
+    // first group_size characters are either '#' or '?'
+    (0..group_size).all(|_| matches!(chars.next(), Some('#') | Some('?')))
+            // and the next character is not '#'
+            && chars.next() != Some('#')
 }
 
-fn after_hashes_positions(pattern: &str) -> impl Iterator<Item = usize> + '_ {
-    let mut pos = Some(0);
+/// Get all positions after a group where the next group could start, and
+/// the end position of the pattern if there is no # characters before it.
+fn after_hashes_positions(after_pattern: &str) -> impl Iterator<Item = usize> + '_ {
+    let mut chars = after_pattern.chars();
+    let mut prev = None;
+    let mut pos = 0;
     from_fn(move || {
-        if let Some(mut n) = pos {
-            if pattern.is_empty() {
-                pos = None;
-                Some(0)
-            } else {
-                loop {
-                    n += 1;
-                    match pattern.chars().nth(n) {
-                        Some('.') => continue,
-                        Some('?') => {
-                            pos = Some(n);
-                            break Some(n);
-                        }
-                        _ => {
-                            pos = None;
-                            break Some(n);
-                        }
-                    }
-                }
-            }
-        } else {
+        if prev == Some('#') {
             None
+        } else {
+            let next = (pos, chars.next());
+            prev = next.1.or(Some('#'));
+            pos += 1;
+            Some(next)
         }
     })
+    .filter(|x| !matches!(x, (0, Some(_)) | (_, Some('.'))))
+    .map(|(offset, _)| offset)
 }
 
 #[cfg(test)]
