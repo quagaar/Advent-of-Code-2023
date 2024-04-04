@@ -1,5 +1,5 @@
 use rayon::prelude::*;
-use std::{collections::HashMap, iter::from_fn};
+use std::{collections::BTreeMap, iter::from_fn};
 
 pub fn solve(input: &str) -> usize {
     input.par_lines().map(process_line).sum()
@@ -19,7 +19,7 @@ fn process_line(line: &str) -> usize {
         .fold(initial_states(pattern), |acc, group_size| {
             acc.into_iter()
                 .filter(|(start_pos, _)| is_valid_group(&pattern[*start_pos..], group_size))
-                .fold(HashMap::new(), |mut acc, (start_pos, count)| {
+                .fold(BTreeMap::new(), |mut acc, (start_pos, count)| {
                     let pos = start_pos + group_size;
                     after_hashes_positions(&pattern[pos..]).for_each(|offset| {
                         acc.entry(pos + offset)
@@ -35,7 +35,7 @@ fn process_line(line: &str) -> usize {
 }
 
 /// Get the initial states to consider for the start of the first group.
-fn initial_states(pattern: &[u8]) -> HashMap<usize, usize> {
+fn initial_states(pattern: &[u8]) -> BTreeMap<usize, usize> {
     if let Some(pos) = pattern.iter().position(|&c| c == b'#') {
         (0..=pos).map(|n| (n, 1)).collect()
     } else {
