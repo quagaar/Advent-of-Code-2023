@@ -1,9 +1,14 @@
-use bencher::setup_benches;
-use criterion::{criterion_group, criterion_main, Criterion};
-use day06::{solve_part1, solve_part2, INPUT};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use day06::{part1, part2, INPUT};
 
 fn criterion_benchmark(c: &mut Criterion) {
-    setup_benches("day06", &solve_part1, &solve_part2, INPUT, c);
+    c.bench_function("solve day06 part1", |b| {
+        b.iter(|| part1::solve(black_box(INPUT)));
+    });
+
+    c.bench_function("solve day06 part2", |b| {
+        b.iter(|| part2::solve(black_box(INPUT)));
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-pub fn solve_part1(input: &str) -> usize {
+pub fn solve(input: &str) -> usize {
     let directions = input.lines().next().unwrap();
     let map = input
         .lines()
@@ -30,7 +30,6 @@ fn read_map_line(line: &str) -> Option<(&str, (&str, &str))> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE1: &str = include_str!("../example.txt");
@@ -38,19 +37,22 @@ mod tests {
 
     #[test]
     fn example1() {
-        let result = solve_part1(EXAMPLE1);
+        let result = solve(EXAMPLE1);
         assert_eq!(result, 2);
     }
 
     #[test]
     fn example2() {
-        let result = solve_part1(EXAMPLE2);
+        let result = solve(EXAMPLE2);
         assert_eq!(result, 6);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part1_txt)]
     #[test]
     fn result() {
-        let result = solve_part1(INPUT);
-        assert_eq!(result, 21797);
+        let expected = include_str!("../part1.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

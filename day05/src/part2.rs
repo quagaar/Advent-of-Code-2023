@@ -3,7 +3,7 @@ use itertools::Itertools;
 use rayon::prelude::*;
 use std::{iter::from_fn, ops::Range};
 
-pub fn solve_part2(input: &str) -> usize {
+pub fn solve(input: &str) -> usize {
     let seed_ranges = get_seed_ranges(input);
     let maps = get_maps(input);
     seed_ranges
@@ -129,20 +129,22 @@ impl MapRange {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example.txt");
 
     #[test]
     fn example() {
-        let result = solve_part2(EXAMPLE);
+        let result = solve(EXAMPLE);
         assert_eq!(result, 46);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part2_txt)]
     #[test]
     fn result() {
-        let result = solve_part2(INPUT);
-        assert_eq!(result, 79004094);
+        let expected = include_str!("../part2.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

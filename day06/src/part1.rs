@@ -1,4 +1,4 @@
-pub fn solve_part1(input: &str) -> usize {
+pub fn solve(input: &str) -> usize {
     let mut lines = input.lines();
     let times = get_data_line(lines.next().unwrap(), "Time");
     let distances = get_data_line(lines.next().unwrap(), "Distance");
@@ -37,20 +37,22 @@ fn is_winner(race_length: usize, hold_time: usize, record: usize) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example.txt");
 
     #[test]
     fn example() {
-        let result = solve_part1(EXAMPLE);
+        let result = solve(EXAMPLE);
         assert_eq!(result, 288);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part1_txt)]
     #[test]
     fn result() {
-        let result = solve_part1(INPUT);
-        assert_eq!(result, 4403592);
+        let expected = include_str!("../part1.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

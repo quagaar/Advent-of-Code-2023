@@ -197,7 +197,6 @@ fn find_next_location(location: Location, map: &[&[u8]]) -> Location {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE3: &str = include_str!("../example3.txt");
@@ -222,9 +221,12 @@ mod tests {
         assert_eq!(result, 10);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part2_txt)]
     #[test]
     fn result() {
-        let result = solve(INPUT);
-        assert_eq!(result, 381);
+        let expected = include_str!("../part2.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

@@ -74,7 +74,6 @@ fn after_hashes_positions(after_pattern: &[u8]) -> impl Iterator<Item = usize> +
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example.txt");
@@ -85,9 +84,12 @@ mod tests {
         assert_eq!(result, 525152);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part2_txt)]
     #[test]
     fn result() {
-        let result = solve(INPUT);
-        assert_eq!(result, 1909291258644);
+        let expected = include_str!("../part2.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

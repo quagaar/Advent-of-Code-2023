@@ -8,20 +8,14 @@ edition = "2021"
 [lib]
 doctest = false
 
-[[bin]]
-name = "day16"
-test = false
-
 [dependencies]
 arrayvec.workspace = true
 grid.workspace = true
 itertools.workspace = true
 rayon.workspace = true
-runner = { path = "../utils/runner" }
 
 [dev-dependencies]
 criterion = { workspace = true }
-bencher = { path = "../utils/bencher" }
 
 [[bench]]
 name = "benchmark"

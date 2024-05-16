@@ -74,7 +74,7 @@ fn get_cycle_targets<'a>(
     }
 }
 
-fn run_cycle(modules: &mut HashMap<&str, Module>, cycle_targets: &Vec<(&str, bool)>) -> Vec<bool> {
+fn run_cycle(modules: &mut HashMap<&str, Module>, cycle_targets: &[(&str, bool)]) -> Vec<bool> {
     let mut result = vec![false; cycle_targets.len()];
     let mut queue = VecDeque::from([Pulse {
         is_high: false,
@@ -169,12 +169,14 @@ struct Pulse<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
+    #[cfg(input_txt)]
+    #[cfg(part2_txt)]
     #[test]
     fn result() {
-        let result = solve(INPUT);
-        assert_eq!(result, 244151741342687);
+        let expected = include_str!("../part2.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

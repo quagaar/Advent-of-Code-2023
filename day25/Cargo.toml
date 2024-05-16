@@ -8,15 +8,10 @@ edition = "2021"
 [lib]
 doctest = false
 
-[[bin]]
-name = "day25"
-test = false
-
 [dependencies]
 itertools.workspace = true
 pathfinding.workspace = true
 rayon.workspace = true
-runner = { path = "../utils/runner" }
 
 [dev-dependencies]
 criterion = { workspace = true }

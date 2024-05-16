@@ -8,17 +8,11 @@ edition = "2021"
 [lib]
 doctest = false
 
-[[bin]]
-name = "day18"
-test = false
-
 [dependencies]
 itertools.workspace = true
-runner = { path = "../utils/runner" }
 
 [dev-dependencies]
 criterion = { workspace = true }
-bencher = { path = "../utils/bencher" }
 
 [[bench]]
 name = "benchmark"

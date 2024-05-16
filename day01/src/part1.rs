@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 
-pub fn solve_part1(input: &str) -> u32 {
+pub fn solve(input: &str) -> u32 {
     input
         .par_lines()
         .filter_map(|line| {
@@ -18,20 +18,22 @@ pub fn solve_part1(input: &str) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example.txt");
 
     #[test]
     fn example() {
-        let result = solve_part1(EXAMPLE);
+        let result = solve(EXAMPLE);
         assert_eq!(result, 142);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part1_txt)]
     #[test]
     fn result() {
-        let result = solve_part1(INPUT);
-        assert_eq!(result, 55108);
+        let expected = include_str!("../part1.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

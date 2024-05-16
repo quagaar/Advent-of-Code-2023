@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 
-pub fn solve_part2(input: &str) -> usize {
+pub fn solve(input: &str) -> usize {
     input
         .par_lines()
         .filter_map(|line| line.split_once(": "))
@@ -30,20 +30,22 @@ fn get_cube_power(rounds: &str) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example.txt");
 
     #[test]
     fn example() {
-        let result = solve_part2(EXAMPLE);
+        let result = solve(EXAMPLE);
         assert_eq!(result, 2286);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part2_txt)]
     #[test]
     fn result() {
-        let result = solve_part2(INPUT);
-        assert_eq!(result, 56580);
+        let expected = include_str!("../part2.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

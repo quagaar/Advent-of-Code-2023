@@ -1,6 +1,6 @@
 use std::{iter::from_fn, ops::Range};
 
-pub fn solve_part1(input: &str) -> usize {
+pub fn solve(input: &str) -> usize {
     let seeds = get_seeds(input);
     let maps = get_maps(input);
     seeds
@@ -69,20 +69,22 @@ impl MapRange {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example.txt");
 
     #[test]
     fn example() {
-        let result = solve_part1(EXAMPLE);
+        let result = solve(EXAMPLE);
         assert_eq!(result, 35);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part1_txt)]
     #[test]
     fn result() {
-        let result = solve_part1(INPUT);
-        assert_eq!(result, 525792406);
+        let expected = include_str!("../part1.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

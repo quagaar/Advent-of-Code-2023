@@ -8,16 +8,10 @@ edition = "2021"
 [lib]
 doctest = false
 
-[[bin]]
-name = "day11"
-test = false
-
 [dependencies]
-runner = { path = "../utils/runner" }
 
 [dev-dependencies]
 criterion = { workspace = true }
-bencher = { path = "../utils/bencher" }
 
 [[bench]]
 name = "benchmark"

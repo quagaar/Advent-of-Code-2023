@@ -12,7 +12,7 @@ pub fn solve(input: &str) -> usize {
 }
 
 /// Settles the stack by dropping bricks to the lowest possible position.
-fn settle_stack(stack: &mut Vec<Brick>) {
+fn settle_stack(stack: &mut [Brick]) {
     stack.sort_by_key(|brick| brick.z.start);
     for n in 0..stack.len() {
         if let Some(drop) = stack
@@ -92,7 +92,6 @@ impl Brick {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example.txt");
@@ -103,9 +102,12 @@ mod tests {
         assert_eq!(result, 5);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part1_txt)]
     #[test]
     fn result() {
-        let result = solve(INPUT);
-        assert_eq!(result, 386);
+        let expected = include_str!("../part1.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

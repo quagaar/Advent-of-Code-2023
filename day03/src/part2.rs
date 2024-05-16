@@ -1,7 +1,7 @@
 use itertools::{chain, Itertools};
 use std::{iter::from_fn, ops::Range};
 
-pub fn solve_part2(input: &str) -> usize {
+pub fn solve(input: &str) -> usize {
     chain!([""], input.lines(), [""])
         .tuple_windows()
         .fold(0, |acc, (prev, cur, next)| {
@@ -73,20 +73,22 @@ fn gear_ratio_calculator<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example.txt");
 
     #[test]
     fn example() {
-        let result = solve_part2(EXAMPLE);
+        let result = solve(EXAMPLE);
         assert_eq!(result, 467835);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part2_txt)]
     #[test]
     fn result() {
-        let result = solve_part2(INPUT);
-        assert_eq!(result, 79844424);
+        let expected = include_str!("../part2.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

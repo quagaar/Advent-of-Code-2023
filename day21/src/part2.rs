@@ -113,7 +113,6 @@ fn try_find_next(sequence: &[isize]) -> Option<Vec<isize>> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example.txt");
@@ -162,10 +161,13 @@ mod tests {
         assert_eq!(result, 16733044);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part2_txt)]
     #[test]
     #[ignore = "Takes too long to run"]
     fn result() {
-        let result = solve(INPUT);
-        assert_eq!(result, 617729401414635);
+        let expected = include_str!("../part2.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

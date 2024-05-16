@@ -12,7 +12,6 @@ pub fn solve(input: &str) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example.txt");
@@ -23,9 +22,12 @@ mod tests {
         assert_eq!(result, 1320);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part1_txt)]
     #[test]
     fn result() {
-        let result = solve(INPUT);
-        assert_eq!(result, 513158);
+        let expected = include_str!("../part1.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

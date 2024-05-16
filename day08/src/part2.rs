@@ -2,7 +2,7 @@ use num::Integer;
 use rayon::prelude::*;
 use std::collections::{hash_map::Entry, HashMap, HashSet};
 
-pub fn solve_part2(input: &str) -> usize {
+pub fn solve(input: &str) -> usize {
     let directions = input.lines().next().unwrap();
     let map = input
         .lines()
@@ -97,20 +97,22 @@ fn get_repeat_info<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::super::INPUT;
     use super::*;
 
     const EXAMPLE: &str = include_str!("../example3.txt");
 
     #[test]
     fn example() {
-        let result = solve_part2(EXAMPLE);
+        let result = solve(EXAMPLE);
         assert_eq!(result, 6);
     }
 
+    #[cfg(input_txt)]
+    #[cfg(part2_txt)]
     #[test]
     fn result() {
-        let result = solve_part2(INPUT);
-        assert_eq!(result, 23977527174353);
+        let expected = include_str!("../part2.txt").trim().parse().unwrap();
+        let result = solve(super::super::INPUT);
+        assert_eq!(result, expected);
     }
 }

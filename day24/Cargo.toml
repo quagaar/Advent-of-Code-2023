@@ -8,15 +8,10 @@ edition = "2021"
 [lib]
 doctest = false
 
-[[bin]]
-name = "day24"
-test = false
-
 [dependencies]
 itertools.workspace = true
 num.workspace = true
 num-traits.workspace = true
-runner = { path = "../utils/runner" }
 
 [dev-dependencies]
 criterion = { workspace = true }
