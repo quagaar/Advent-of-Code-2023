@@ -31,7 +31,7 @@ fn find_number_ranges(line: &str) -> impl Iterator<Item = Range<usize>> + '_ {
 fn find_gear_positions(line: &str) -> impl Iterator<Item = usize> + '_ {
     let mut pos = 0;
     from_fn(move || {
-        if let Some(offset) = line[pos..].find(|c| c == '*') {
+        if let Some(offset) = line[pos..].find('*') {
             let result = pos + offset;
             pos = result + 1;
             Some(result)

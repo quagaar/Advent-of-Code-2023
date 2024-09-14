@@ -1,5 +1,3 @@
-use std::usize;
-
 pub fn solve(input: &str) -> usize {
     input.split("\n\n").map(process_pattern).sum()
 }
