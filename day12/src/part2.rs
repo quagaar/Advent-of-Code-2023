@@ -5,7 +5,7 @@ pub fn solve(input: &str) -> usize {
     input.par_lines().map(process_line).sum()
 }
 
-fn process_line(line: &str) -> usize {
+pub fn process_line(line: &str) -> usize {
     let (pattern, group_sizes) = line.split_once(' ').unwrap();
 
     let pattern = format!("{0}?{0}?{0}?{0}?{0}", pattern);
