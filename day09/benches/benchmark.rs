@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
 use day09::{part1, part2, INPUT};
 
 fn criterion_benchmark(c: &mut Criterion) {
@@ -9,6 +9,26 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("solve day09 part2", |b| {
         b.iter(|| part2::solve(black_box(INPUT)));
     });
+
+    let mut group = c.benchmark_group("process_line day09");
+    group.sample_size(1000);
+    group.bench_function("part1", |b| {
+        let mut lines = INPUT.lines().cycle();
+        b.iter_batched(
+            move || lines.next().unwrap(),
+            part1::process_line,
+            BatchSize::SmallInput,
+        );
+    });
+    group.bench_function("part2", |b| {
+        let mut lines = INPUT.lines().cycle();
+        b.iter_batched(
+            move || lines.next().unwrap(),
+            part2::process_line,
+            BatchSize::SmallInput,
+        );
+    });
+    group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);

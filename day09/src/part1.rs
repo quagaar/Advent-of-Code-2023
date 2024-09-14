@@ -4,7 +4,7 @@ pub fn solve(input: &str) -> i32 {
     input.par_lines().map(process_line).sum()
 }
 
-fn process_line(line: &str) -> i32 {
+pub fn process_line(line: &str) -> i32 {
     find_next_value(
         line.split_ascii_whitespace()
             .filter_map(|s| s.parse::<i32>().ok())

@@ -6,7 +6,13 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| part1::solve(black_box(INPUT)));
     });
 
-    c.bench_function("process line day12 part1", |b| {
+    c.bench_function("solve day12 part2", |b| {
+        b.iter(|| part2::solve(black_box(INPUT)));
+    });
+
+    let mut group = c.benchmark_group("process_line day12");
+    group.sample_size(1000);
+    group.bench_function("part1", |b| {
         let mut lines = INPUT.lines().cycle();
         b.iter_batched(
             move || lines.next().unwrap(),
@@ -14,12 +20,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             BatchSize::SmallInput,
         );
     });
-
-    c.bench_function("solve day12 part2", |b| {
-        b.iter(|| part2::solve(black_box(INPUT)));
-    });
-
-    c.bench_function("process line day12 part2", |b| {
+    group.bench_function("part2", |b| {
         let mut lines = INPUT.lines().cycle();
         b.iter_batched(
             move || lines.next().unwrap(),
@@ -27,6 +28,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             BatchSize::SmallInput,
         );
     });
+    group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);

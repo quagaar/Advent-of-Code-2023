@@ -2,7 +2,7 @@ pub fn solve(input: &str) -> usize {
     input.split("\n\n").map(process_pattern).sum()
 }
 
-fn process_pattern(pattern: &str) -> usize {
+pub fn process_pattern(pattern: &str) -> usize {
     let map = pattern.lines().map(str::as_bytes).collect::<Vec<_>>();
 
     let vertical_lines = map
