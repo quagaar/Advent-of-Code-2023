@@ -1,5 +1,7 @@
+use rayon::prelude::*;
+
 pub fn solve(input: &str) -> usize {
-    input.split("\n\n").map(process_pattern).sum()
+    input.split("\n\n").par_bridge().map(process_pattern).sum()
 }
 
 pub fn process_pattern(pattern: &str) -> usize {

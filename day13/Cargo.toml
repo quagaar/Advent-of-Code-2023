@@ -10,6 +10,7 @@ doctest = false
 
 [dependencies]
 itertools.workspace = true
+rayon.workspace = true
 
 [dev-dependencies]
 criterion = { workspace = true }
